@@ -1,0 +1,82 @@
+{
+  "name": "framic-ai",
+  "version": "0.1.0",
+  "description": "Enterprise AI Creator Platform - Build, generate, and monetize AI-created content",
+  "private": true,
+  "license": "MIT",
+  "author": "David Sun <davidsun2026@example.com>",
+  "homepage": "https://github.com/davidsun2026-v1/framic-ai",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/davidsun2026-v1/framic-ai.git"
+  },
+  "bugs": {
+    "url": "https://github.com/davidsun2026-v1/framic-ai/issues"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=18.17",
+    "npm": ">=10.0",
+    "bun": ">=1.0"
+  },
+  "packageManager": "bun@1.0.0",
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "format": "biome format --write .",
+    "type-check": "turbo run type-check",
+    "test": "turbo run test",
+    "test:unit": "turbo run test:unit",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "turbo run test:e2e",
+    "db:migrate": "supabase migration up",
+    "db:seed": "ts-node scripts/seed-database.ts",
+    "db:reset": "supabase db reset",
+    "db:types": "supabase gen types typescript --local > packages/types/database.types.ts",
+    "turbo:build": "turbo build --no-cache",
+    "turbo:lint": "turbo lint --no-cache",
+    "turbo:test": "turbo test --no-cache",
+    "clean": "turbo run clean && rm -rf node_modules .next dist",
+    "vercel-build": "turbo build --filter=web",
+    "postinstall": "turbo run build --no-cache"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@biome/cli": "^1.4.0",
+    "@biome/formatter": "^1.4.0",
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.3",
+    "turbo": "^1.10.16"
+  },
+  "keywords": [
+    "ai",
+    "creator",
+    "platform",
+    "image-generation",
+    "video-generation",
+    "subscription",
+    "credits",
+    "saas"
+  ],
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
