@@ -1,149 +1,53 @@
-# CreatorOS Project Charter
+# Framic AI — Project Charter
 
-## Mission
+## 1. Mission
+Build a production subscription SaaS that gives creators a unified workspace for AI-generated image and video content, with real payments, credit-based usage, owned assets, and auditable generation workflows.
 
-Build a subscription-based AI creator platform that enables users to generate, manage, and monetize AI-generated content from a unified workspace.
+## 2. Product vision
+Framic AI should deliver a creator-grade experience comparable to modern AI creation products while keeping every financially or operationally important action traceable.
 
-The platform should provide creator-grade experiences comparable to modern AI generation tools while maintaining a sustainable credit-based business model.
+## 3. Business model
+- Recurring subscriptions with included credits.
+- Additional credit purchases where supported.
+- Future marketplace and enterprise revenue.
 
----
+## 4. Product scope
+### Phase 1 — MVP
+Authentication, profiles, dashboard, credits, subscriptions, Paystack payments, text-to-image, image-to-image, asset library, monitoring, and deployment foundation.
 
-## Product Type
+### Phase 2
+Text-to-video, image-to-video, video extensions, and project workspaces.
 
-AI Creator Platform
+### Phase 3
+Marketplace, team collaboration, and shared assets/permissions.
 
----
+## 5. Technical direction
+Next.js, TypeScript, Tailwind, shadcn/ui, Turborepo, Supabase/PostgreSQL, Supabase Auth, Replicate, Paystack, Sentry, and Vercel.
 
-## Business Model
+## 6. Architecture principles
+1. Mobile-first.
+2. API-first.
+3. Modular domain boundaries.
+4. Provider-agnostic AI contracts.
+5. Atomic credit accounting.
+6. Server-side authorization.
+7. User-owned assets.
+8. Auditable payment/subscription state.
+9. Observable asynchronous generation.
+10. Production-safe changes only.
 
-Subscription SaaS
+## 7. Non-negotiable product invariants
+- No fake production payment success.
+- No client-controlled credits.
+- Payment entitlement requires verified provider evidence.
+- Every generation attempt is tracked.
+- Every asset has an owner and access policy.
+- Failed generation has deterministic recovery/refund behavior.
+- Secrets are never committed or exposed to clients.
+- Documentation must distinguish implemented behavior from planned behavior.
 
-Users purchase:
+## 8. Success criteria
+The MVP is complete only when the critical user journey works against real integrated systems and passes the release checklist: authenticate → obtain profile → purchase/receive entitlement → receive credits → generate → track → persist owned asset → observe truthful status.
 
-- Monthly subscriptions
-- Additional credit packs
-
-Revenue Sources:
-
-- Subscription Plans
-- Credit Purchases
-- Marketplace Revenue (future)
-- Enterprise Plans (future)
-
----
-
-## Target Users
-
-Primary Users:
-
-- Content Creators
-- Designers
-- Marketers
-- Agencies
-- Small Businesses
-
-Secondary Users:
-
-- Teams
-- Startups
-- Enterprise Organizations
-
----
-
-## Core Features
-
-Phase 1
-
-- Authentication
-- User Dashboard
-- Credits System
-- Text-to-Image
-- Image-to-Image
-- Billing
-- Asset Library
-
-Phase 2
-
-- Text-to-Video
-- Image-to-Video
-- Video Extensions
-- Project Workspaces
-
-Phase 3
-
-- Marketplace
-- Team Collaboration
-- Shared Assets
-
----
-
-## Technical Stack
-
-Frontend:
-- Next.js
-- TypeScript
-- Tailwind CSS
-- shadcn/ui
-
-Backend:
-- Supabase
-
-AI Providers:
-- Replicate
-
-Payments:
-- Paystack
-
-Monitoring:
-- Sentry
-
-Project Management:
-- Linear
-
-Hosting:
-- Vercel
-
-Domain:
-- Hostinger
-
----
-
-## Architecture Principles
-
-1. Mobile-first
-2. API-first
-3. Modular architecture
-4. Provider-agnostic AI system
-5. Credit-driven billing
-6. Serverless-first deployment
-7. Scalable asset storage
-
----
-
-## Non-Negotiable Rules
-
-1. Never generate mock payment flows.
-2. Never bypass credit deductions.
-3. Every generation must be tracked.
-4. Every API call must be logged.
-5. Every asset must belong to a user.
-6. Every subscription action must be auditable.
-7. Production-ready code only.
-
----
-
-## MVP Success Criteria
-
-- Sign up works
-- Subscription purchase works
-- Credits deduction works
-- Image generation works
-- Assets save correctly
-- Billing accurately tracked
-- Errors monitored in Sentry
-
----
-
-## Long-Term Goal
-
-Become a complete AI creation ecosystem for video, image, and creative asset generation.
+## 9. Scope discipline
+The 11 delivery epics are the execution structure: Foundation, Authentication, Profiles, Credits, Subscription, Paystack, Replicate, Asset Library, AI Generation, Monitoring, Deployment. New work must map to an epic or be explicitly approved as cross-cutting maintenance.
