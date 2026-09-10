@@ -1,0 +1,99 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.4.0/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100,
+    "trailingComma": "es5",
+    "semicolons": "always",
+    "arrowParentheses": "always",
+    "bracketSpacing": true,
+    "jsxQuoteStyle": "double",
+    "quoteStyle": "single",
+    "attributePosition": "auto",
+    "include": ["**/*.{js,jsx,ts,tsx,json,md}"],
+    "exclude": ["node_modules", "dist", ".next", "coverage"]
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "complexity": {
+        "noExcessiveComplexity": "error",
+        "noBannedTypes": "error"
+      },
+      "correctness": {
+        "noConstAssign": "error",
+        "noConstantCondition": "error",
+        "noDebugger": "error",
+        "noDuplicateKeys": "error",
+        "noEmptyPattern": "error",
+        "noFunctionAssign": "error",
+        "noImportAssign": "error",
+        "noInnerDeclarations": "error",
+        "noInvalidConstructorSuper": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noNewSymbol": "error",
+        "noNonoctalDecimalEscape": "error",
+        "noPrecisionLoss": "error",
+        "noSelfAssign": "error",
+        "noSetterReturn": "error",
+        "noStringCaseMismatch": "error",
+        "noSwitchDeclarationsInCaseBlock": "error",
+        "noUndeclaredVariables": "error",
+        "noUnreachable": "error",
+        "noUnreachableSuper": "error",
+        "noUnsafeFinally": "error",
+        "noUnsafeOptionalChaining": "error",
+        "noUnusedLabels": "error",
+        "useIsNan": "error",
+        "useValidForDirection": "error",
+        "useYield": "error"
+      },
+      "security": {
+        "noSuspiciousSemicolonUsage": "error"
+      },
+      "style": {
+        "noArguments": "error",
+        "noCommaOperator": "error",
+        "noImplicitBoolean": "warn",
+        "noNegationElse": "warn",
+        "noNonNullAssertion": "warn",
+        "noParameterAssign": "error",
+        "noUnusedTemplateLiteral": "warn",
+        "useAsConstAssertion": "warn",
+        "useBlockStatements": "warn",
+        "useCollapsedElseIf": "warn",
+        "useConst": "error",
+        "useConsistentArrayType": "warn",
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "warn",
+        "useEventHandler": "warn",
+        "useFunctionDeclarations": "warn",
+        "useIsNan": "error",
+        "useLiteralKeys": "warn",
+        "useNamingConvention": "warn",
+        "useNodejsImportProtocol": "error",
+        "useNumericLiterals": "warn",
+        "useSelfClosingElements": "warn",
+        "useSortedKeys": "off",
+        "useTemplate": "warn",
+        "useValidTypeof": "error",
+        "useWhile": "warn"
+      }
+    },
+    "include": ["apps/**/*.{js,jsx,ts,tsx}", "packages/**/*.{js,jsx,ts,tsx}"],
+    "exclude": ["node_modules", "dist", ".next", "coverage", "**/*.config.js"]
+  },
+  "organizeImports": {
+    "enabled": true,
+    "include": ["**/*.{js,jsx,ts,tsx}"],
+    "exclude": ["node_modules", "dist", ".next"]
+  }
+}
