@@ -1,0 +1,54 @@
+{
+  "$schema": "https://turborepo.org/schema.json",
+  "version": "1",
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**", ".next/**"],
+      "cache": true,
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "start": {
+      "cache": false,
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "outputs": [],
+      "cache": true
+    },
+    "type-check": {
+      "outputs": [],
+      "cache": true
+    },
+    "test": {
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "test:unit": {
+      "outputs": ["coverage/**"],
+      "cache": true
+    },
+    "test:integration": {
+      "outputs": ["coverage/**"],
+      "cache": true,
+      "dependsOn": ["build"]
+    },
+    "test:e2e": {
+      "outputs": [],
+      "cache": false
+    },
+    "clean": {
+      "cache": false
+    }
+  },
+  "globalDependencies": ["**/.env.local", "**/.env"],
+  "globalEnv": [
+    "NODE_ENV",
+    "ENVIRONMENT",
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+  ]
+}
