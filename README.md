@@ -2,7 +2,7 @@
 
 Framic AI is a planned production SaaS for creator-grade AI image and video generation, with subscriptions, credits, payments, asset ownership, and auditable generation workflows.
 
-> **Repository truth:** this repository currently contains the foundation documentation and monorepo configuration. The application, database implementation, integrations, tests, CI/CD, and production deployment are not yet implemented.
+> **Repository truth:** this repository contains foundation documentation, monorepo configuration, an initial Supabase schema migration, initial domain types, and early auth/middleware scaffolding in apps/web. Application business logic, payment/provider integrations, tests, CI/CD, and production deployment are not yet implemented.
 
 ## Product vision
 
@@ -50,10 +50,10 @@ Supabase Auth is the identity authority; application profile data belongs in `pu
 ## Repository structure
 
 ```text
-framic-ai/
-├── apps/                       # application workspaces (to be implemented)
-│   ├── web/
-│   └── api/
+
+├── apps/
+│   ├── web/                    # scaffolding started (auth, middleware)
+│   └── api/                    # not yet started
 ├── packages/                  # shared workspaces (to be implemented)
 │   ├── ui/
 │   ├── core/
@@ -81,10 +81,11 @@ The documentation set is intentionally complete before implementation so future 
 - `docs/00-FOUNDATION/04-ARCHITECTURE_DECISIONS.md` — resolved architectural decisions
 - `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md` — evidence-based status
 - `docs/00-FOUNDATION/06-DOCUMENTATION_PLAN.md` — complete documentation inventory
+- `docs/01-GETTING_STARTED/04-AI_AGENT_SETUP.md` — AI agent/MCP tooling setup
 - `docs/02-MODULES/` — module contracts
 - `docs/03-OPERATIONS/` — security, database, deployment, incidents
 - `docs/04-TESTING/` — verification and release gates
-
+  
 ## Delivery model
 
 Work is organized into these epics:
