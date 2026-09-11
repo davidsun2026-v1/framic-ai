@@ -39,3 +39,28 @@ Paystack, Sentry, Vercel.
 GitHub and Supabase are available via MCP (project config in `.mcp.json`;
 see `docs/01-GETTING_STARTED/04-AI_AGENT_SETUP.md`). Use them to read/verify
 repo and schema state — writes still go through the PR workflow above.
+
+# Framic AI — CLAUDE.md
+
+## Stack
+Next.js, TypeScript, Tailwind, shadcn/ui, Supabase/Postgres,
+Replicate, Paystack, Vercel, Sentry
+
+## Current phase
+Phase 1 MVP: auth, profiles, credits, subscriptions, Paystack,
+text-to-image, asset library, generation history
+(Phase 2/3 not started — video, teams, marketplace)
+
+## Commands
+npm run dev / build / lint / typecheck
+supabase db diff / db push (never against prod directly)
+
+## Hard rules
+- No direct push to main — PR only
+- Every generation touches credit_wallets + credit_transactions,
+  no exceptions
+- AI provider calls go through the provider-abstraction layer,
+  never called directly
+- RLS required on every new table
+- Docs (README/spec/architecture/DB/API) updated in the same PR
+  as the feature, not after
