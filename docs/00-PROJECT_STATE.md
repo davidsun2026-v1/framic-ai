@@ -14,33 +14,116 @@ This file exists to prevent:
 - Repository hallucinations
 - Incorrect implementation claims
 - Loss of project continuity across sessions
+- Duplicate documentation that can drift out of sync
 
 ---
 
-# Current Repository State
+# AI Operations Protocol
 
-## Project
+## AI Startup Procedure
 
-Framic AI
+Before performing any development, audit, implementation, planning, database modification, documentation update, deployment work, or architectural change:
 
-## Product Vision
+1. Read:
+   - `docs/00-PROJECT_STATE.md`
+   - `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`
 
-Framic AI is a creator-focused AI platform providing:
+2. Verify repository state.
 
-- AI image generation
-- AI video generation
-- Asset management
-- Subscription billing
-- Credit consumption
-- Creator monetization workflows
-- Enterprise-grade scalability
-- Auditable generation history
+3. Verify current repository structure.
+
+4. Verify current implementation evidence.
+
+5. Verify latest migrations.
+
+6. Verify current active epic.
+
+7. Verify current module dependencies.
+
+8. Verify deployment status.
+
+9. Verify subscription configuration.
+
+10. Continue only from verified repository evidence.
+
+Never continue from memory.
+
+This document is the command center. Do not create a separate memory/state file merely to duplicate information already governed here.
 
 ---
 
-# Verification Rules
+## Required Project Files
 
-## Repository Truth Hierarchy
+The following files must exist:
+
+- `docs/00-PROJECT_STATE.md`
+- `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`
+
+Recommended files, created only when the work genuinely requires them:
+
+- `docs/04-TESTING/IMPLEMENTATION_CHECKLIST.md`
+- `docs/04-TESTING/FRONTEND_STATUS.md`
+- `docs/04-TESTING/BACKEND_STATUS.md`
+- `docs/03-OPERATIONS/PRODUCTION_READINESS.md`
+- `docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md`
+
+The repository currently uses `docs/00-PROJECT_STATE.md` as the command center. Do not create `docs/00-FOUNDATION/00-PROJECT_STATE.md` as a duplicate unless the project structure is explicitly changed and the existing command-center role is intentionally migrated.
+
+---
+
+## Missing File Handling
+
+If a required or recommended file does not exist:
+
+1. Verify the path.
+2. Confirm the file is absent from the repository.
+3. Create the file only when it is genuinely needed by the current work or required by the project governance.
+4. Use existing repository conventions for naming, location, structure, and formatting.
+5. Document why the file was created.
+6. Update this `PROJECT_STATE.md` when the new file materially changes the project documentation structure or operational source of truth.
+
+Never assume a missing file exists.
+Never create duplicate state, memory, or status files merely because a similar document would be convenient.
+
+---
+
+## Repository Audit Procedure
+
+For every audit:
+
+### Step 1
+List actual repository contents.
+
+### Step 2
+Compare repository contents against documentation.
+
+### Step 3
+Identify discrepancies.
+
+### Step 4
+Cite exact file paths for implementation evidence.
+
+### Step 5
+Recommend corrections.
+
+### Step 6
+Provide proposed changes before commit.
+
+### Status classifications
+
+Use only:
+
+- **Implemented** — verified implementation evidence exists.
+- **Partial** — some implementation evidence exists, but the capability is incomplete.
+- **Planned** — described by requirements/design but implementation evidence is absent.
+- **Not Found** — the expected implementation or file was searched for and not found.
+- **Unable To Verify** — evidence could not be established with the available repository/configuration access.
+
+Documentation, README claims, issue descriptions, TODOs, dependency declarations, and folder names do not by themselves establish implementation.
+
+---
+
+# Repository Truth Hierarchy
 
 Highest Authority:
 
@@ -66,27 +149,150 @@ Non-Implementation Evidence:
 
 If code and documentation disagree:
 
-CODE WINS.
+**CODE WINS.**
 
 Documentation must be corrected.
 
 ---
 
-# Repository Auditor Rule
+# Subscription Governance
 
-Before any implementation work:
+Subscription data may only be sourced from:
 
-Required Reading Order:
+`docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md`
 
-1. PROJECT_STATE.md
-2. IMPLEMENTATION_STATUS.md
-3. Current Epic Document
-4. Current Module Document
-5. Latest Repository State
+If the file does not exist, or its contents cannot be verified:
 
-No work may begin from memory.
+**Status: Unable To Verify**
 
-Repository state must be re-verified.
+Do not invent:
+
+- Plan names
+- Pricing
+- Credit allocations
+- Limits
+- Billing cycles
+
+Do not treat README, UI copy, environment variables, code constants, or provider configuration as the subscription source of truth unless the repository explicitly establishes that authority.
+
+---
+
+# Frontend / Backend Verification
+
+## Frontend Verification
+
+**Authority:** `apps/web`
+
+Evidence examples:
+
+- Pages
+- Routes
+- Components
+- Layouts
+- Build configuration
+- Tests
+
+No evidence = no claim.
+
+## Backend Verification
+
+**Authority:** `apps/api`
+
+Evidence examples:
+
+- Routes
+- Services
+- Controllers
+- Middleware
+- Validation
+- Tests
+
+No evidence = no claim.
+
+If the expected application directory is absent, classify the capability as **Not Found** rather than assuming it exists elsewhere.
+
+---
+
+# Production Verification
+
+A project is not considered live or production-ready unless verified evidence exists for:
+
+- Frontend deployment
+- Backend deployment
+- Production database
+- Environment configuration
+- Monitoring
+- Billing
+- Testing
+
+If any required component cannot be verified:
+
+**Status: Not Verified**
+
+Do not claim production readiness.
+
+---
+
+# Anti-Hallucination Rule
+
+When evidence is unavailable:
+
+**STOP.**
+
+Do not:
+
+- Assume
+- Guess
+- Estimate
+- Infer
+- Extrapolate
+
+Use only:
+
+- Verified
+- Partially Verified
+- Planned
+- Not Found
+- Unable To Verify
+
+Unknown information remains unknown until repository evidence is found.
+
+Never claim implementation because:
+
+- README says so
+- Documentation says so
+- Issue says so
+- TODO says so
+- Dependency exists
+- Folder exists
+- Configuration exists
+
+Only verified implementation evidence may change status.
+
+Required evidence includes the applicable source code, database migrations, tests, workflows, and deployment verification.
+
+**No evidence = no claim.**
+
+---
+
+# Current Repository State
+
+## Project
+
+Framic AI
+
+## Product Vision
+
+Framic AI is a creator-focused AI platform providing:
+
+- AI image generation
+- AI video generation
+- Asset management
+- Subscription billing
+- Credit consumption
+- Creator monetization workflows
+- Enterprise-grade scalability
+- Auditable generation history
 
 ---
 
@@ -281,145 +487,29 @@ None
 
 ---
 
-# Subscription Source Of Truth
-
-Subscription pricing may only be defined in:
-
-docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md
-
-If pricing cannot be found there:
-
-DO NOT ASSUME PRICING.
-
-Status:
-Unable To Verify
-
----
-
-# Frontend Status
-
-Authority Source:
-
-apps/web
-
-Evidence Required:
-
-- UI pages
-- Components
-- Routing
-- Build configuration
-
-Without repository evidence:
-
-Status = Unable To Verify
-
----
-
-# Backend Status
-
-Authority Source:
-
-apps/api
-
-Evidence Required:
-
-- Routes
-- Services
-- Controllers
-- Validation
-- Tests
-
-Without repository evidence:
-
-Status = Unable To Verify
-
----
-
-# Production Readiness
-
-A deployment is only considered live when all are verified:
-
-- [ ] Production frontend
-- [ ] Production backend
-- [ ] Production database
-- [ ] Production environment variables
-- [ ] Monitoring
-- [ ] Billing verification
-- [ ] Smoke tests
-- [ ] Security review
-
-Missing evidence means:
-
-NOT LIVE
-
----
-
-# Unverified Assumption Protocol
-
-When information is unavailable:
-
-STOP.
-
-Do not:
-
-- Assume
-- Estimate
-- Infer
-- Extrapolate
-- Guess
-
-Instead:
-
-Use one of:
-
-- Verified
-- Partially Verified
-- Planned
-- Not Found
-- Unable To Verify
-
-Unknown information remains unknown until repository evidence is found.
-
----
-
-# Anti-Hallucination Rule
-
-Never claim implementation because:
-
-- README says so
-- Documentation says so
-- Issue says so
-- TODO says so
-- Dependency exists
-- Folder exists
-- Configuration exists
-
-Only verified implementation evidence may change status.
-
-Required evidence:
-
-- Source code
-- Database migrations
-- Tests
-- Workflows
-- Deployment verification
-
-No evidence = no claim.
-
----
-
 # Last Verification
 
 Verified By:
 Repository Auditor
 
 Verification Date:
-YYYY-MM-DD
+2026-09-11
 
 Verification Commit:
-UNKNOWN
+Pending — governance update branch
 
 Verification Confidence:
-Pending
+Repository evidence reviewed for the current documentation/governance change
 
+---
 
+# Change Control
+
+Any implementation, architecture, documentation, migration, deployment, or configuration change must:
+
+1. Be based on current repository evidence.
+2. Preserve the source-of-truth hierarchy.
+3. Update the appropriate authoritative documentation when behavior or architecture changes.
+4. Avoid duplicate memory/state documents.
+5. Use a feature/fix/docs/chore branch and pull request; do not commit directly to `main`.
+6. Be reviewed against the actual resulting repository state before being considered complete.
