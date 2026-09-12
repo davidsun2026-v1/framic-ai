@@ -22,8 +22,7 @@
     "clsx": "^2.0.0",
     "lucide-react": "^0.292.0",
     "zod": "^3.22.4",
-    "@framic/types": "*",
-    "@framic/ui": "*"
+    "@framic/types": "*"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
