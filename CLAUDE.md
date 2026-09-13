@@ -1,10 +1,19 @@
 # Framic AI — Agent Context
 
+## AI Startup Procedure
+
+Before any development, audit, implementation, planning, database modification, documentation update, deployment work, or architectural change:
+
+1. Read `docs/00-PROJECT_STATE.md`.
+2. Read `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`.
+3. Verify the actual repository state and structure.
+4. Verify implementation evidence, latest migrations, active epic, module dependencies, deployment status, and subscription configuration as applicable.
+5. Continue only from verified repository evidence.
+
+Never continue from memory. `docs/00-PROJECT_STATE.md` is the command center; do not create duplicate memory/state files.
+
 ## Repository truth (verify before trusting this section)
-Foundation/documentation phase. Do not claim a capability is implemented
-because a doc describes it — see `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`
-for the evidence-based ledger, and reconcile it against actual files before
-relying on it (it may lag behind `apps/web`).
+Foundation/documentation phase. Do not claim a capability is implemented because a doc describes it — see `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md` for the evidence-based ledger, and reconcile it against actual files before relying on it.
 
 ## Stack
 Next.js, TypeScript, Tailwind, shadcn/ui, Turborepo monorepo,
@@ -12,9 +21,7 @@ Supabase/PostgreSQL + Supabase Auth, Replicate (behind a provider adapter),
 Paystack, Sentry, Vercel.
 
 ## Phases
-- Phase 1 (MVP, in progress): auth, profiles, dashboard, credits,
-  subscriptions, Paystack, text-to-image, image-to-image, asset library,
-  monitoring, production release foundation.
+- Phase 1 (MVP, in progress): auth, profiles, dashboard, credits, subscriptions, Paystack, text-to-image, image-to-image, asset library, monitoring, production release foundation.
 - Phase 2 (not started): text-to-video, image-to-video, project workspaces.
 - Phase 3 (not started): marketplace, team collaboration, shared assets.
 
@@ -34,22 +41,12 @@ Paystack, Sentry, Vercel.
 - Update documentation in the same PR as the behavior/architecture change.
 - Do not merge claims that were not verified (run the check, don't assume).
 - Supabase migrations are reviewed like code — never run ad hoc against prod.
+- Create recommended documentation files only when genuinely needed; verify absence first and record why the file was created.
 
 ## Tooling available to agents
 GitHub and Supabase are available via MCP (project config in `.mcp.json`;
 see `docs/01-GETTING_STARTED/04-AI_AGENT_SETUP.md`). Use them to read/verify
 repo and schema state — writes still go through the PR workflow above.
-
-# Framic AI — CLAUDE.md
-
-## Stack
-Next.js, TypeScript, Tailwind, shadcn/ui, Supabase/Postgres,
-Replicate, Paystack, Vercel, Sentry
-
-## Current phase
-Phase 1 MVP: auth, profiles, credits, subscriptions, Paystack,
-text-to-image, asset library, generation history
-(Phase 2/3 not started — video, teams, marketplace)
 
 ## Commands
 npm run dev / build / lint / typecheck
