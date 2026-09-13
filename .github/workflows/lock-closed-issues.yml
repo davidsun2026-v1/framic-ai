@@ -1,0 +1,34 @@
+name: Lock Closed Issues and PRs
+
+on:
+  schedule:
+    # Runs daily at midnight UTC
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lock Closed Issues and PRs
+        uses: dessant/lock-threads@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Number of days of inactivity before locking a closed issue (set to 30 days)
+          closed-issue-days: 30
+          # Number of days of inactivity before locking a closed PR (set to 30 days)
+          closed-pull-request-days: 30
+          # Exclude items with specific labels if needed (optional)
+          # exclude-issue-labels: ""
+          # exclude-pr-labels: ""
+          # Optional comment to post when locking
+          issue-comment: >
+            This issue has been automatically locked since there has been no recent activity after it was closed. 
+            Please open a new issue for related bugs.
+          pr-comment: >
+            This pull request has been automatically locked since there has been no recent activity after it was closed.
+            
