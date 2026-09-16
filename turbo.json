@@ -1,6 +1,5 @@
 {
   "$schema": "https://turborepo.org/schema.json",
-  "version": "1",
   "tasks": {
     "build": {
       "outputs": ["dist/**", ".next/**"],
