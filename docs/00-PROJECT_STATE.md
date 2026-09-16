@@ -153,7 +153,7 @@ If code and documentation disagree:
 
 Documentation must be corrected.
 
-**Repository evidence and live production evidence can also disagree.** When they do, direct database/API introspection of the actual running system is the tiebreaker, not the repo's own migration files or docs (verified finding, 2026-09-16 — see `05-IMPLEMENTATION_STATUS.md`).
+**Repository evidence and live production evidence can also disagree.** When they do, direct verification against the live running system (e.g. database introspection) is the tiebreaker, not the repository's own migration files or docs. Confirmed 2026-09-16: this repository's `supabase/migrations/` did not match the real production schema.
 
 ---
 
@@ -177,7 +177,7 @@ Do not invent:
 
 Do not treat README, UI copy, environment variables, code constants, or provider configuration as the subscription source of truth unless the repository explicitly establishes that authority.
 
-Note: real production has a `subscription_plans` table (verified via direct introspection, 2026-09-16), but `SUBSCRIPTION_MATRIX.md` still does not exist in this repository. Plan names/pricing/limits remain **Unable To Verify** until that file is created from verified production data.
+Note: real production has a `subscription_plans` table (verified 2026-09-16 via direct introspection), but its contents have not been read into this documentation and `SUBSCRIPTION_MATRIX.md` still does not exist. Do not cite plan names or pricing until that file is created from verified evidence.
 
 ---
 
@@ -215,7 +215,7 @@ No evidence = no claim.
 
 If the expected application directory is absent, classify the capability as **Not Found** rather than assuming it exists elsewhere.
 
-Note: `apps/api` remains **Not Found**. A small number of API routes exist inside `apps/web/app/api/` instead (e.g. `apps/web/app/api/balance/route.ts`) — this is Next.js Route Handler code within the frontend app, not a separate backend application, and should not be conflated with `apps/api` when auditing backend status.
+Note: `apps/api` remains Not Found as of 2026-09-16. One backend-style route currently lives inside `apps/web/app/api/balance/route.ts` instead (a Next.js Route Handler, not a separate app). This is a reasonable interim pattern for a small route count but should be reconsidered if the API surface grows.
 
 ---
 
@@ -236,8 +236,6 @@ If any required component cannot be verified:
 **Status: Not Verified**
 
 Do not claim production readiness.
-
-Note: a real, populated production Supabase database has been verified to exist (2026-09-16, direct introspection — 35 tables, working RPCs, real schema). This satisfies "production database" evidence. Frontend/backend deployment, monitoring, and billing integration remain unverified — production readiness as a whole is still **Not Verified**.
 
 ---
 
@@ -306,17 +304,17 @@ Framic AI is a creator-focused AI platform providing:
 
 # Current Development Phase
 
-Status: Foundation → Early Build
+Status: Foundation complete; Authentication/Profiles/Credits/Billing/Asset Library partially built against a real production backend discovered 2026-09-16 (see `05-IMPLEMENTATION_STATUS.md` for full evidence).
 
-Phase Completion (corrected 2026-09-16 to match `05-IMPLEMENTATION_STATUS.md`; this section previously said every phase was "Not Started," which was already false by the time this file was written):
+Phase Completion:
 
 - Foundation: In Progress
 - Authentication: Partial — signup/signin/signout verified working against real production trigger; never runtime-tested via `next dev`
-- Profiles: Partial — real production table verified, read-only in dashboard, no edit UI
-- Credits: Partial — mature production token-ledger backend verified; only balance read is wired into app code
-- Billing: Not Started (app-side) — production has payment/subscription RPCs, but zero app-side integration
-- AI Generation: Not Started — production has the full token-reservation flow; no `/generate` route exists
-- Asset Library: Partial — production table verified, read-only listing in dashboard
+- Profiles: Partial — real table verified, read-only in dashboard, no edit UI
+- Credits: Partial — real token-ledger backend verified, only balance read wired into app
+- Billing: Partial — real backend RPCs verified (Paystack + Flutterwave), zero app-side integration
+- AI Generation: Planned — real reservation-flow backend verified, no `/generate` route exists
+- Asset Library: Partial — real table verified, read-only listing in dashboard
 - Monitoring: Not Started
 - Deployment: Unable To Verify
 
@@ -330,13 +328,13 @@ Status: In Progress
 
 Tasks:
 
-- [x] Monorepo configuration
-- [x] Shared package structure (`packages/types` only; others not yet created)
-- [x] Web application scaffold
-- [ ] API application scaffold (`apps/api` — Not Found)
-- [x] Database migration foundation (exists, but does not match production — see `05-IMPLEMENTATION_STATUS.md`)
-- [ ] Environment template (`.env.example` verified to reference unrelated/generic boilerplate, not the real stack — needs rewrite)
-- [x] Documentation baseline
+- [x] Monorepo configuration — `package.json`, `turbo.json` verified
+- [ ] Shared package structure — only `packages/types` exists; incomplete
+- [x] Web application scaffold — `apps/web` verified with working pages
+- [ ] API application scaffold — `apps/api` Not Found
+- [ ] Database migration foundation — file exists but does not match production (see Repository Truth Hierarchy note above); not trustworthy as-is
+- [ ] Environment template — `.env.example` exists but describes a generic/stale configuration that does not match production; needs correction
+- [x] Documentation baseline — this file + `05-IMPLEMENTATION_STATUS.md` now maintained as evidence-based
 
 ---
 
@@ -346,13 +344,13 @@ Status: Partial
 
 Tasks:
 
-- [x] Supabase Auth integration
-- [x] Login page
-- [x] Registration page (same form as login, mode-toggled)
-- [ ] Password reset flow
-- [x] Session handling (middleware)
-- [x] Route protection (middleware)
-- [ ] Authentication tests
+- [x] Supabase Auth integration — real `handle_new_user()` trigger verified working
+- [x] Login page — `apps/web/app/login/page.tsx`
+- [ ] Registration page — signup is a mode toggle within the login page, not a distinct page
+- [ ] Password reset flow — no evidence found
+- [x] Session handling — `apps/web/lib/auth/middleware-utils.ts`, `apps/web/app/auth/callback/route.ts`
+- [x] Route protection — middleware guards `/dashboard`, `/generate`, `/settings`
+- [ ] Authentication tests — none exist
 
 ---
 
@@ -362,11 +360,11 @@ Status: Partial
 
 Tasks:
 
-- [x] Profiles table (real production table verified; repo migration file does not match it)
-- [ ] Profile API
-- [ ] Profile management UI (dashboard reads profile, does not edit it)
-- [ ] Avatar support
-- [ ] Profile tests
+- [x] Profiles table — verified in real production (`full_name`, `avatar_url`, `tier_level`, `subscription_status`, `account_status`)
+- [ ] Profile API — Not Found
+- [ ] Profile management UI — dashboard reads profile but has no edit UI
+- [ ] Avatar support — column exists, no upload UI
+- [ ] Profile tests — none exist
 
 ---
 
@@ -376,27 +374,27 @@ Status: Partial
 
 Tasks:
 
-- [x] Credits schema (real production `token_ledgers`/`token_reservations`; repo migration's `credit_wallets` does not exist in production)
-- [x] Ledger system (verified via direct introspection: `reserve_generation_tokens`, `settle_generation_tokens`, `release_generation_tokens`, `refund_generation_tokens`)
-- [ ] Credit awarding (app-side — not wired)
-- [ ] Credit deductions (app-side — not wired)
-- [x] Audit history (`audit_logs` table referenced by ledger functions)
-- [ ] Credits tests
+- [x] Credits schema — real production `token_ledgers`, `token_reservations`, `view_user_balances` verified
+- [x] Ledger system — same as above
+- [ ] Credit awarding — no app-level evidence of when/how tokens are granted
+- [ ] Credit deductions — `reserve_generation_tokens`/`settle_generation_tokens` exist in the database but are not called from any app code yet
+- [x] Audit history — RPCs write to `audit_logs`, verified via function definitions
+- [ ] Credits tests — none exist
 
 ---
 
 ## EPIC-005 Billing & Subscriptions
 
-Status: Not Started (app-side)
+Status: Partial
 
 Tasks:
 
-- [ ] Subscription plans (table exists in production; no `SUBSCRIPTION_MATRIX.md`, no app code)
-- [ ] Paystack integration (production RPCs exist; no app-side checkout/webhook)
-- [ ] Webhook verification
-- [ ] Billing portal
-- [ ] Subscription sync
-- [ ] Billing tests
+- [x] Subscription plans — `subscription_plans` table verified in real production
+- [ ] Paystack integration — backend RPCs exist; no app-side checkout/integration code
+- [ ] Webhook verification — no app-side webhook handler found
+- [ ] Billing portal — Not Found
+- [ ] Subscription sync — `apply_subscription_renewal` RPC exists; no verified app-level trigger/cron
+- [ ] Billing tests — none exist
 
 ---
 
@@ -406,12 +404,12 @@ Status: Partial
 
 Tasks:
 
-- [x] Asset storage (real production `generated_assets` table verified)
-- [x] Asset ownership (RLS own-row SELECT policy verified)
-- [x] Asset listing (dashboard reads it)
-- [ ] Asset deletion
-- [ ] Asset search
-- [ ] Asset tests
+- [x] Asset storage — `generated_assets` table verified (`asset_type`, `storage_url`, `generation_status`)
+- [x] Asset ownership — RLS policies verified restricting rows to `user_id`
+- [x] Asset listing — dashboard displays a user's assets (PR #8)
+- [ ] Asset deletion — Not Found
+- [ ] Asset search — Not Found
+- [ ] Asset tests — none exist
 
 ---
 
@@ -431,15 +429,15 @@ Tasks:
 
 ## EPIC-008 AI Generation
 
-Status: Not Started (app-side; production backend flow verified to already exist)
+Status: Planned — real production backend verified (`generation_jobs`, `reserve_generation_tokens` → `settle_generation_tokens`/`release_generation_tokens` → `finalize_generation_job`), no app-side route
 
 Tasks:
 
 - [ ] Text-to-image
 - [ ] Image-to-image
-- [ ] Generation queue (production `generation_jobs` + reservation RPCs exist; no app integration)
+- [ ] Generation queue
 - [ ] Generation history
-- [ ] Credit consumption (app-side)
+- [ ] Credit consumption
 - [ ] Generation tests
 
 ---
@@ -460,13 +458,13 @@ Tasks:
 
 ## EPIC-010 Deployment
 
-Status: Unable To Verify
+Status: Not Started
 
 Tasks:
 
-- [ ] Production build (never run — see `05-IMPLEMENTATION_STATUS.md` Manual Verification Pending)
+- [ ] Production build
 - [ ] Environment configuration
-- [ ] Database deployment (production database itself verified to exist and be populated with real schema)
+- [ ] Database deployment
 - [ ] Frontend deployment
 - [ ] Backend deployment
 - [ ] Smoke testing
@@ -476,39 +474,40 @@ Tasks:
 # Current Work Item
 
 Epic:
-EPIC-002 Authentication (active development), with EPIC-001 Foundation still in progress in parallel
+EPIC-002 Authentication (runtime verification) / EPIC-008 AI Generation (next build target)
 
 Status:
-Partial
+Active
 
 Last Completed Task:
-PR #8 — corrected dashboard and added `/api/balance` route to read real production schema instead of the repo's non-matching migration file
+Corrected `05-IMPLEMENTATION_STATUS.md` and this file's Roadmap/Phase sections to match verified 2026-09-16 evidence (PR #3 merge, this change)
 
 Current Task:
-Runtime verification of `apps/web` (`next dev`/`next build` against real credentials) — never yet performed; see "Manual Verification Pending" in `05-IMPLEMENTATION_STATUS.md`
+Runtime verification of the Auth MVP — `next dev`/`next build` against real Supabase credentials, real signup through `/login`, confirm `/dashboard` balance display — see "Manual Verification Pending" in `05-IMPLEMENTATION_STATUS.md`. This requires a human or an environment with real credentials and network access; it cannot be performed from a sandboxed assistant session.
 
 Next Task:
-Reconcile `supabase/migrations/` with the real production schema (baseline migration), and/or scope EPIC-008 generation flow against the production RPCs that already exist
+Once runtime-verified, begin EPIC-008 AI Generation: build `/generate` wired to the real, already-verified `reserve_generation_tokens` → `settle_generation_tokens`/`release_generation_tokens` flow.
 
 Blockers:
-- `supabase/migrations/20260910000000_init_schema.sql` does not match production and should not be trusted as schema source of truth
-- PR #5 (Next.js 14→16, a 2-major-version dependency bump) needs runtime testing before merge, not just CI
+- Runtime verification pending (needs a human-operated environment with real credentials)
+- `supabase/migrations/` still not reconciled with real production schema
+- PR #5 (Next.js 14→16) held pending the same runtime verification
 
 ---
 
 # Last Verification
 
 Verified By:
-Repository Auditor (direct production database introspection performed this session)
+Direct repository inspection + live production Supabase database introspection
 
 Verification Date:
 2026-09-16
 
 Verification Commit:
-Multiple — see merged PRs #1, #4, #6, #7, #8 and this reconciliation commit
+Merged via PRs #1, #3, #4, #6, #7, #8
 
 Verification Confidence:
-High for schema/backend claims (direct introspection). Unable To Verify for runtime application behavior (never executed).
+High for schema/backend claims (direct database introspection). Explicitly NOT verified: runtime behavior of `apps/web` (never run via `next dev`/`next build`).
 
 ---
 
