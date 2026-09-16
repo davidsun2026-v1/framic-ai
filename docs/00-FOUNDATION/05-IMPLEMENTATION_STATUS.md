@@ -39,6 +39,16 @@ Documentation, README claims, issue descriptions, TODOs, dependency declarations
 | CI/CD | Implemented | `.github/workflows/codeql.yml` verified passing on multiple merged PRs (#1, #4, #6, #7, #8); branch protection on `main` requires the `Analyze (actions)` check. |
 | Deployment | Unable To Verify | Repository structure alone does not verify a live production deployment. |
 
+## Manual Verification Pending
+
+The following have NEVER been runtime-tested and require a human (or an agent with an actual running dev environment) to verify:
+
+- [ ] `npm run dev` / `next dev` actually starts without error against real Supabase credentials
+- [ ] `next build` succeeds (production build, not just CodeQL static analysis)
+- [ ] A real signup through the `/login` UI actually creates a working session and lands on `/dashboard`
+- [ ] The dashboard's balance display (`/api/balance`) returns a real, correct number for a real user
+- [ ] PR #5 (Next.js 14.2.35 → 16.3.5, a 2-major-version jump) does not break the build or App Router behavior — must be tested before merging, not assumed safe from CodeQL passing alone
+
 ## Governance
 
 1. Read `docs/00-PROJECT_STATE.md` before beginning work.
