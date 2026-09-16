@@ -20,17 +20,9 @@ export async function signUpWithPassword(email: string, password: string) {
     return { success: false, error: authError?.message || 'User creation failed' };
   }
 
-  // Fallback profile & wallet creation if Supabase triggers didn't fire
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', authData.user.id)
-    .single();
-
-  if (!profile) {
-    await supabase.from('profiles').insert({ id: authData.user.id, email: authData.user.email, status: 'active' });
-    await supabase.from('credit_wallets').insert({ user_id: authData.user.id, balance: 0 });
-  }
+  // Profile and wallet are created server-side by the on_auth_user_created
+  // trigger (see supabase/migrations/20260915000000_add_user_signup_trigger.sql).
+  // No client-side insert needed or attempted here.
 
   return { success: true, user: authData.user };
 }

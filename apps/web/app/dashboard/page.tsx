@@ -12,7 +12,7 @@ export default async function DashboardPage() {
     redirect('/login');
   }
 
-  const [{ data: profile }, { data: wallet }, { data: assets }] = await Promise.all([
+  const [profileResult, walletResult, assetsResult] = await Promise.all([
     supabase.from('profiles').select('email, display_name').eq('id', user.id).single(),
     supabase.from('credit_wallets').select('balance').eq('user_id', user.id).single(),
     supabase
@@ -23,6 +23,29 @@ export default async function DashboardPage() {
       .order('created_at', { ascending: false })
       .limit(12),
   ]);
+
+  // Previously, query errors were silently discarded and rendered as an
+  // empty/zero state indistinguishable from a genuinely new user. Now we
+  // surface a real error state instead.
+  const loadError = profileResult.error || walletResult.error || assetsResult.error;
+
+  if (loadError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 px-4 text-white">
+        <div className="max-w-sm rounded-lg border border-red-900 bg-red-950/40 p-6 text-center">
+          <h1 className="mb-2 text-lg font-semibold">Couldn't load your account</h1>
+          <p className="text-sm text-neutral-400">
+            Something went wrong loading your data. Please try refreshing the page.
+          </p>
+          <p className="mt-3 text-xs text-neutral-600">{loadError.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  const profile = profileResult.data;
+  const wallet = walletResult.data;
+  const assets = assetsResult.data;
 
   const displayName = profile?.display_name || profile?.email || user.email;
   const balance = wallet?.balance ?? 0;
@@ -41,12 +64,15 @@ export default async function DashboardPage() {
             <span className="font-semibold">{balance.toLocaleString()}</span>
           </div>
 
-          <a
-            href="/generate"
-            className="rounded-md bg-white px-4 py-2 text-sm font-medium text-black hover:bg-neutral-200"
+          {/* /generate doesn't exist yet — disabled rather than a dead link (Codex P1) */}
+          <button
+            type="button"
+            disabled
+            title="Coming soon"
+            className="cursor-not-allowed rounded-md bg-neutral-800 px-4 py-2 text-sm font-medium text-neutral-500"
           >
             + New generation
-          </a>
+          </button>
 
           <form action={signOut}>
             <button
