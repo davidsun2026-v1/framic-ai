@@ -1,0 +1,8 @@
+{
+  "name": "framic-workflow",
+  "description": "Repository-truth audit discipline for the Framic AI codebase — verifies implementation claims against actual files before coding, planning, or status reporting.",
+  "version": "1.0.0",
+  "author": {
+    "name": "davidsun2026-v1"
+  }
+}
