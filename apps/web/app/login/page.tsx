@@ -1,16 +1,27 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithPassword, signUpWithPassword } from '@/lib/auth/actions';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Surface errors redirected from /auth/callback (e.g. expired/invalid
+  // confirmation link), which was previously silently dropped.
+  useEffect(() => {
+    const callbackError = searchParams.get('error');
+    if (callbackError) {
+      setError(decodeURIComponent(callbackError));
+    }
+  }, [searchParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -79,7 +90,11 @@ export default function LoginPage() {
             />
           </div>
 
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && (
+            <p className="rounded-md border border-red-900 bg-red-950/50 px-3 py-2 text-sm text-red-400">
+              {error}
+            </p>
+          )}
 
           <button
             type="submit"
@@ -103,4 +118,13 @@ export default function LoginPage() {
       </div>
     </div>
   );
-            }
+}
+
+export default function LoginPage() {
+  // useSearchParams requires a Suspense boundary in the app router.
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
