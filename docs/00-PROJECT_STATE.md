@@ -312,7 +312,7 @@ Phase Completion:
 - Authentication: Partial — working end-to-end against real production (PRs #6, #7), never runtime-tested via `next dev`
 - Profiles: Partial — dashboard reads real `profiles` table, no edit UI
 - Credits: Partial — real production ledger system exists, only balance read is wired into the app
-- Billing: Not Started — real production RPCs exist, zero app-side code
+- Billing: Not Started — schema exists (`payments`/`subscriptions`/`webhook_events`, verified live on the connected Supabase project); no Paystack-related RPCs found on direct introspection; zero app-side code — see `docs/02-MODULES/05-PAYSTACK.md`
 - AI Generation: Not Started — real production reservation flow exists, no `/generate` route
 - Asset Library: Partial — dashboard reads real `generated_assets` table, no write path
 - Monitoring: Not Started
@@ -390,7 +390,7 @@ Status: Not Started (app-side)
 Tasks:
 
 - [x] Subscription plans (real production tables exist; pricing content remains Unable To Verify per Subscription Governance)
-- [ ] Paystack integration (real production RPCs exist; no app-side checkout/webhook code)
+- [ ] Paystack integration (schema exists — `payments`/`subscriptions`/`webhook_events`, verified live; no Paystack-related RPCs found in `pg_proc` on direct introspection; no app-side checkout/webhook code — see `docs/02-MODULES/05-PAYSTACK.md`)
 - [ ] Webhook verification
 - [ ] Billing portal
 - [ ] Subscription sync
@@ -480,13 +480,13 @@ Status:
 Active
 
 Last Completed Task:
-Corrected `PROJECT_STATE.md` roadmap and phase-completion status to match verified evidence in `05-IMPLEMENTATION_STATUS.md` (this document had not been updated since 2026-09-11 and still showed every epic as Not Started).
+Corrected the Paystack billing claims in this document ("real production RPCs exist" → no Paystack-related RPCs found on direct `pg_proc` introspection of the connected Supabase project) and completed `docs/02-MODULES/05-PAYSTACK.md` per the Documentation Plan checklist.
 
 Current Task:
 Runtime verification of `apps/web` (never run via `next dev`/`next build`) and reconciliation of `supabase/migrations/` with real production schema.
 
 Next Task:
-Complete the Manual Verification Pending checklist in `05-IMPLEMENTATION_STATUS.md`.
+Complete the Manual Verification Pending checklist in `05-IMPLEMENTATION_STATUS.md`. The EPIC-004 Credits section above still claims `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` and verified reserve/settle/release/refund RPCs — direct introspection of the connected Supabase project (`gkvvecskbkwpcsuatklm`) found none of these; only `profiles`, `credit_wallets`, `credit_transactions`, `subscriptions`, `payments`, `generated_assets`, `generation_jobs`, `webhook_events` exist, and the only credits RPC live is `get_user_balance` (added in PR #18, reading `credit_wallets.balance`). This section needs the same kind of correction just applied to Billing, as a follow-up.
 
 Blockers:
 None.
@@ -499,7 +499,7 @@ Verified By:
 Repository Auditor (direct GitHub + Supabase introspection)
 
 Verification Date:
-2026-09-16
+2026-09-20
 
 Verification Commit:
 See `05-IMPLEMENTATION_STATUS.md` for the full evidence ledger corresponding to this date.
