@@ -3,7 +3,7 @@
 ## Purpose
 Single evidence-based ledger separating what exists from what is designed, implemented, and runtime-verified.
 
-**Verified baseline (2026-09-16):** the repository contains a substantial foundation and an initial Supabase schema migration. The current application code also references a newer production-style token/RPC contract. Those contracts are not fully represented by the repository migration chain. The authoritative FRAMIC AI production Supabase project is not currently identifiable through the connected Supabase account, so no production-schema claim is made here without direct target-project evidence.
+**Verified baseline (2026-09-20):** the connected Supabase project (`gkvvecskbkwpcsuatklm`) has been directly introspected via `pg_class`/`pg_proc`/`pg_trigger`, and its live schema matches `supabase/migrations/20260910000000_init_schema.sql` table-for-table. This is strong evidence the connection is the correct FRAMIC AI project, superseding the earlier (2026-09-16) finding that no identifiable FRAMIC project was reachable. The application/documentation references to a token-ledger/RPC contract (`token_ledgers`, `token_reservations`, `view_user_balances`, `audit_logs`) were checked directly against this project and found not to exist anywhere — repository code and docs claiming otherwise have been corrected (see `docs/00-PROJECT_STATE.md`, EPIC-004).
 
 See `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md` for the detailed reconciliation and exit criteria.
 
@@ -14,15 +14,15 @@ See `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md` for the detailed reconcil
 | Web app | PARTIAL | `apps/web` exists with Next.js configuration, auth callback/actions, Supabase clients, middleware, and application routes |
 | API | PARTIAL | App Router API route exists (`/api/balance`); dedicated `apps/api` does not exist |
 | Shared packages | PARTIAL | `packages/types` exists; other planned shared packages are not fully implemented |
-| Supabase schema/migrations | PARTIAL / DRIFT | `supabase/migrations/20260910000000_init_schema.sql` defines the initial wallet/credit schema, while current application/status evidence references a token-ledger/RPC contract not represented by that migration |
-| Authentication | PARTIAL | Auth actions use real Supabase Auth methods. Signup references an `on_auth_user_created` trigger migration that is absent from the repository migration directory |
-| Profiles | PARTIAL | Initial repository schema defines `public.profiles`; exact target production columns are not verified for the FRAMIC target project |
-| Credits | BROKEN / NOT VERIFIED | App balance path calls `get_user_balance`; the repository migration does not define that RPC or `view_user_balances`. Token-ledger/reservation production claims require direct target-project verification |
-| Subscriptions | PARTIAL | Initial subscription schema exists; executable provider renewal flow is not verified for the FRAMIC target project |
-| Paystack | NOT VERIFIED | Payment schema exists, but no complete app-side checkout/webhook fulfillment flow is proven |
+| Supabase schema/migrations | PARTIAL | `supabase/migrations/20260910000000_init_schema.sql` and `20260918000000_add_signup_trigger_and_balance_rpc.sql` define the current schema/trigger/RPC set; verified live table-for-table on the connected project |
+| Authentication | PARTIAL | Auth actions use real Supabase Auth methods. `on_auth_user_created` trigger is defined in `20260918000000_add_signup_trigger_and_balance_rpc.sql` and verified live via `pg_trigger`; never runtime-tested via `next dev` |
+| Profiles | PARTIAL | `public.profiles` verified live via introspection; exact production columns confirmed for `full_name` (used by dashboard) |
+| Credits | PARTIAL | Schema verified live: `credit_wallets`, `credit_transactions` (immutable ledger). Only RPC is `get_user_balance(p_user_id)`, verified live via `pg_proc`, added by `20260918000000_add_signup_trigger_and_balance_rpc.sql`. No reserve/settle/release/refund RPCs or `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` exist anywhere — prior claims to the contrary are corrected |
+| Subscriptions | PARTIAL | `subscription_plans`/`subscriptions` schema verified live; pricing/plan content remains Unable To Verify per Subscription Governance (`docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md` does not exist) |
+| Paystack | PLANNED | `payments`/`subscriptions`/`webhook_events` schema verified live; no Paystack-related RPCs found via `pg_proc`; zero application code (checkout/webhook) — see `docs/02-MODULES/05-PAYSTACK.md` |
 | Replicate | NOT VERIFIED | Provider integration is not proven in the current repository |
-| Asset library | PARTIAL | `generated_assets` schema exists; exact target production contract is not verified |
-| Generation | NOT VERIFIED | `generation_jobs` schema exists, but executable provider submission and token settlement flow is not proven |
+| Asset library | PARTIAL | `generated_assets` schema verified live; dashboard reads it; no write path |
+| Generation | NOT VERIFIED | `generation_jobs` schema exists; no reservation RPC exists (see Credits row above) and no app code |
 | Monitoring | PLANNED | Requirements/documentation only |
 | Tests | NOT VERIFIED | Test configuration exists, but required test execution evidence is pending |
 | CI/CD | PARTIAL | CodeQL workflow exists and has prior passing evidence; application build/type-check verification remains a release gate |
@@ -32,33 +32,35 @@ See `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md` for the detailed reconcil
 
 ### Verified in repository
 
-- `supabase/migrations/20260910000000_init_schema.sql` exists.
-- The migration defines `profiles`, `credit_wallets`, `credit_transactions`, `subscriptions`, `payments`, `generated_assets`, `generation_jobs`, and `webhook_events`.
-- RLS policies and core constraints are defined for those tables.
+- `supabase/migrations/20260910000000_init_schema.sql` exists and defines `profiles`, `credit_wallets`, `credit_transactions`, `subscriptions`, `payments`, `generated_assets`, `generation_jobs`, and `webhook_events`.
+- `supabase/migrations/20260918000000_add_signup_trigger_and_balance_rpc.sql` exists and defines the `on_auth_user_created` trigger (`handle_new_user()`) and `get_user_balance(p_user_id)` RPC.
+- RLS policies and core constraints are defined for those tables in the init migration.
 - `apps/web/lib/supabase/client.ts`, `server.ts`, and `service.ts` exist.
 - `apps/web/lib/auth/actions.ts` calls real Supabase Auth methods.
 
-### Broken repository contracts
+### Resolved repository contracts (previously broken)
 
-1. `apps/web/lib/auth/actions.ts` references `20260915000000_add_user_signup_trigger.sql`, but that migration is not present in `supabase/migrations/`.
-2. `apps/web/lib/supabase/service.ts` calls `get_user_balance(p_user_id)` and documents `view_user_balances`, but neither is defined by the repository's only migration.
-3. Repository documentation references `token_ledgers`, `token_reservations`, and token-generation RPCs, but the migration chain does not define those objects.
+1. `apps/web/lib/auth/actions.ts` previously referenced a non-existent `20260915000000_add_user_signup_trigger.sql`. The actual trigger now ships in `20260918000000_add_signup_trigger_and_balance_rpc.sql`, verified live, and the code comment has been corrected.
+2. `apps/web/lib/supabase/service.ts` previously claimed `get_user_balance` read from `view_user_balances`. Verified live via `pg_proc`: it reads `credit_wallets.balance` directly. `view_user_balances` does not exist. Comment corrected.
+3. Repository documentation previously referenced `token_ledgers`, `token_reservations`, and token-generation RPCs. Verified live via `pg_class`/`pg_proc`: none of these objects exist. Documentation corrected in `docs/00-PROJECT_STATE.md` (EPIC-004).
+
+### Known open drift (not yet resolved)
+
+- Live RLS policy count/names on `webhook_events` do not match `20260910000000_init_schema.sql` (migration defines three policies; live has zero). Net security behavior is unaffected today (RLS default-denies with no policy; service role bypasses RLS regardless), but this should be reconciled before webhook write logic is built — see `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md`.
 
 ### Production verification boundary
 
-The connected Supabase account currently exposes the STRIKE GEN AI project. It does not provide an identifiable FRAMIC AI production project in the available project list. Therefore FRAMIC production schema, RPCs, triggers, RLS, and deployed migrations remain **NOT VERIFIED** from the current connection.
-
-No speculative production migration has been created.
+The connected Supabase project (`gkvvecskbkwpcsuatklm`) is confirmed, via direct introspection matching the repository's own migration schema table-for-table, to be the FRAMIC AI project referenced by this repository. Object-level facts stated above (tables, RPCs, triggers) are Verified by direct introspection. Runtime application behavior (e.g. `next dev`/`next build`, end-to-end auth/balance smoke tests) remains **NOT VERIFIED** — see Manual Verification Pending below.
 
 ## Manual Verification Pending
 
 The following remain release gates:
 
-- [ ] Identify the authoritative FRAMIC AI Supabase project/ref.
-- [ ] Introspect live tables, columns, constraints, indexes, RLS policies, functions, views, and auth triggers.
-- [ ] Reconcile the live contract with repository migrations.
-- [ ] Verify `get_user_balance()` and all token reservation/settlement RPC signatures.
-- [ ] Verify signup creates the required application profile/wallet state.
+- [x] Identify the authoritative FRAMIC AI Supabase project/ref. — Resolved 2026-09-20: `gkvvecskbkwpcsuatklm` confirmed via table-for-table schema match.
+- [x] Introspect live tables, columns, constraints, indexes, RLS policies, functions, views, and auth triggers. — Done via `pg_class`/`pg_proc`/`pg_trigger` (see `docs/00-PROJECT_STATE.md` Evidence Log).
+- [ ] Reconcile the live contract with repository migrations. — Object-level reconciliation done for tables/RPC/trigger; RLS policy drift on `webhook_events` still open (see above).
+- [x] Verify `get_user_balance()` signature. — Verified live: `get_user_balance(p_user_id uuid)`, `STABLE SECURITY DEFINER`. No token reservation/settlement RPCs exist to verify — confirmed not found.
+- [x] Verify signup creates the required application profile/wallet state. — Verified live: `on_auth_user_created` trigger inserts `profiles` + `credit_wallets` rows.
 - [ ] Run `npm run dev` against valid development credentials.
 - [ ] Run type-check, lint, tests, and production build successfully.
 - [ ] Perform a real authentication smoke test.
