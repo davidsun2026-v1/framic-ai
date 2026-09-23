@@ -23,7 +23,7 @@ export const FramicGenerationStateSchema = z.enum([
 ]);
 
 export const FramicGenerationRequestSchema = z.object({
-  channel: z.string().url(),
+  channel: z.string().startsWith(FRAMIC_AHP_GENERATION_CHANNEL_PREFIX),
   type: FramicGenerationTypeSchema,
   model: z.string().min(1),
   prompt: z.string().min(1),
@@ -33,14 +33,14 @@ export const FramicGenerationRequestSchema = z.object({
 }).strict();
 
 export const FramicGenerationAcceptedSchema = z.object({
-  channel: z.string().url(),
+  channel: z.string().startsWith(FRAMIC_AHP_GENERATION_CHANNEL_PREFIX),
   generationJobId: z.string().uuid(),
   requestId: z.string().uuid(),
   state: FramicGenerationStateSchema,
 }).strict();
 
 export const FramicGenerationStateSchemaEnvelope = z.object({
-  channel: z.string().url(),
+  channel: z.string().startsWith(FRAMIC_AHP_GENERATION_CHANNEL_PREFIX),
   generationJobId: z.string().uuid(),
   requestId: z.string().uuid(),
   state: FramicGenerationStateSchema,
