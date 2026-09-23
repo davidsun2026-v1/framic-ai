@@ -5,20 +5,35 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
+  "files": {
+    "include": [
+      "apps/**/*.{js,jsx,ts,tsx}",
+      "packages/**/*.{js,jsx,ts,tsx}"
+    ],
+    "ignore": [
+      "node_modules",
+      "dist",
+      ".next",
+      "coverage",
+      "**/*.config.js"
+    ]
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 100,
-    "trailingComma": "es5",
-    "semicolons": "always",
-    "arrowParentheses": "always",
-    "bracketSpacing": true,
-    "jsxQuoteStyle": "double",
-    "quoteStyle": "single",
-    "attributePosition": "auto",
-    "include": ["**/*.{js,jsx,ts,tsx,json,md}"],
-    "exclude": ["node_modules", "dist", ".next", "coverage"]
+    "attributePosition": "auto"
+  },
+  "javascript": {
+    "formatter": {
+      "jsxQuoteStyle": "double",
+      "trailingComma": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "quoteStyle": "single"
+    }
   },
   "linter": {
     "enabled": true,
@@ -26,7 +41,8 @@
       "recommended": true,
       "complexity": {
         "noExcessiveComplexity": "error",
-        "noBannedTypes": "error"
+        "noBannedTypes": "error",
+        "useLiteralKeys": "warn"
       },
       "correctness": {
         "noConstAssign": "error",
@@ -71,29 +87,17 @@
         "useBlockStatements": "warn",
         "useCollapsedElseIf": "warn",
         "useConst": "error",
-        "useConsistentArrayType": "warn",
         "useDefaultParameterLast": "error",
         "useEnumInitializers": "warn",
-        "useEventHandler": "warn",
-        "useFunctionDeclarations": "warn",
-        "useIsNan": "error",
-        "useLiteralKeys": "warn",
         "useNamingConvention": "warn",
-        "useNodejsImportProtocol": "error",
         "useNumericLiterals": "warn",
         "useSelfClosingElements": "warn",
-        "useSortedKeys": "off",
         "useTemplate": "warn",
-        "useValidTypeof": "error",
         "useWhile": "warn"
       }
-    },
-    "include": ["apps/**/*.{js,jsx,ts,tsx}", "packages/**/*.{js,jsx,ts,tsx}"],
-    "exclude": ["node_modules", "dist", ".next", "coverage", "**/*.config.js"]
+    }
   },
   "organizeImports": {
-    "enabled": true,
-    "include": ["**/*.{js,jsx,ts,tsx}"],
-    "exclude": ["node_modules", "dist", ".next"]
+    "enabled": true
   }
 }
