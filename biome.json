@@ -41,7 +41,8 @@
       "recommended": true,
       "complexity": {
         "noExcessiveComplexity": "error",
-        "noBannedTypes": "error"
+        "noBannedTypes": "error",
+        "useLiteralKeys": "warn"
       },
       "correctness": {
         "noConstAssign": "error",
@@ -86,15 +87,9 @@
         "useBlockStatements": "warn",
         "useCollapsedElseIf": "warn",
         "useConst": "error",
-        "useConsistentArrayType": "warn",
         "useDefaultParameterLast": "error",
         "useEnumInitializers": "warn",
-        "useEventHandler": "warn",
-        "useFunctionDeclarations": "warn",
-        "useIsNan": "error",
-        "useLiteralKeys": "warn",
         "useNamingConvention": "warn",
-        "useNodejsImportProtocol": "error",
         "useNumericLiterals": "warn",
         "useSelfClosingElements": "warn",
         "useTemplate": "warn",
