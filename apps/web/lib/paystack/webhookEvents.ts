@@ -65,21 +65,18 @@ export async function claimWebhookEvent(params: {
   return { id: existing.id, status: existing.status, isRetry: true };
 }
 
-// webhook_events blocks UPDATE for everyone except... actually it blocks
-// UPDATE outright via "Prevent updates" (USING (false)) even for service
-// role, per the live migration. So completion state is tracked by issuing
-// a fresh row only when reprocessing (isRetry + not yet 'processed') is
-// needed; for the common case (new event, processed successfully in one
-// pass) we simply leave status at 'verified' and rely on payments/
-// subscriptions/credit_transactions as the source of truth for what was
-// fulfilled. This function is a no-op placeholder documenting that
-// decision so a future migration adding a real completion path (e.g. a
-// SECURITY DEFINER function that bypasses the UPDATE-block deliberately)
-// has a clear call site to wire up.
+// The init migration defines a "Prevent updates" policy (FOR UPDATE
+// USING (false)) on webhook_events alongside "Service role access only"
+// (FOR ALL). Whether Postgres's OR-combination of permissive policies
+// means service_role can still UPDATE despite that policy is NOT VERIFIED
+// here — I have not tested it against the live table. Rather than rely on
+// an unverified RLS interaction for a financial audit log, application
+// code simply does not attempt to UPDATE webhook_events at all: fulfillment
+// outcomes live on payments/subscriptions/credit_transactions instead,
+// which are the actual source of truth for what was fulfilled. This
+// function is a documented no-op placeholder for that decision, and a
+// clear call site if a future migration adds a real, explicitly-tested
+// completion path.
 export async function markWebhookEventOutcome(_eventId: string, _outcome: 'processed' | 'failed', _error?: string) {
-  // Intentionally not implemented — see comment above. Do not add a raw
-  // UPDATE against webhook_events from application code; the table's own
-  // RLS policy blocks it by design (immutable event log), and bypassing
-  // that from here would fight the schema instead of extending it.
   return;
 }
