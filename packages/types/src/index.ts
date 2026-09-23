@@ -195,6 +195,7 @@ export interface PaystackWebhookPayload {
       currency: string;
       created_at: string;
     };
+    metadata?: Record<string, unknown> | null;
     paid_at: string;
     created_at: string;
   };
