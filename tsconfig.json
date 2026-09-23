@@ -46,6 +46,7 @@
     // Path Mapping (for monorepo)
     "baseUrl": ".",
     "paths": {
+      "@/*": ["apps/web/*"],
       "@framic/types": ["packages/types"],
       "@framic/types/*": ["packages/types/*"],
       "@framic/core": ["packages/core"],
