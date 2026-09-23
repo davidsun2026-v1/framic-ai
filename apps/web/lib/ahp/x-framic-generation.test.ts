@@ -9,7 +9,7 @@ import {
 } from '../../../../packages/types/src/ahp-generation';
 
 const validRequest = {
-  channel: 'https://example.invalid/x-framic-generation/550e8400-e29b-41d4-a716-446655440000',
+  channel: 'x-framic-generation:/550e8400-e29b-41d4-a716-446655440000',
   type: 'text_to_image',
   model: 'provider-defined-model',
   prompt: 'A cinematic city at night',
