@@ -153,7 +153,7 @@ If code and documentation disagree:
 
 Documentation must be corrected.
 
-**Repository evidence and live production evidence can also disagree.** When they do, direct database/API introspection of the actual running system is the tiebreaker, not the repo's own migration files or docs (verified finding, 2026-09-16 — see `05-IMPLEMENTATION_STATUS.md`).
+**Repository code and live production evidence can also disagree.** When they do, direct verification against the running system (e.g. database introspection) is the tiebreaker, not the repository's own migration files or docs. (Verified finding, 2026-09-16: this repo's `supabase/migrations/` did not match the real production schema. Update, 2026-09-20: the connected Supabase project's live schema now matches `supabase/migrations/20260910000000_init_schema.sql` table-for-table, which is strong evidence this connection is the correct FRAMIC AI project — see the Evidence Log below.)
 
 ---
 
@@ -177,7 +177,7 @@ Do not invent:
 
 Do not treat README, UI copy, environment variables, code constants, or provider configuration as the subscription source of truth unless the repository explicitly establishes that authority.
 
-Note: real production has a `subscription_plans` table (verified via direct introspection, 2026-09-16), but `SUBSCRIPTION_MATRIX.md` still does not exist in this repository. Plan names/pricing/limits remain **Unable To Verify** until that file is created from verified production data.
+Note: real production has `subscription_plans`/`subscriptions` tables and renewal RPCs (verified via direct database introspection, 2026-09-16), but `SUBSCRIPTION_MATRIX.md` still does not exist in this repository. Pricing/plan details therefore remain **Unable To Verify** from repository evidence alone, even though the underlying tables exist. A business document ("Framic AI — Subscription Tiers & Credit Unit Economics", supplied 2026-09-20) claims `docs/SUBSCRIPTION_TIERS.md` as its authoritative source; that file also does not exist in the repository. Per this section's own rule, an external document is not repository evidence — its pricing/tier figures remain **Unable To Verify** until a matching file exists in the repository at the governed path.
 
 ---
 
@@ -215,7 +215,7 @@ No evidence = no claim.
 
 If the expected application directory is absent, classify the capability as **Not Found** rather than assuming it exists elsewhere.
 
-Note: `apps/api` remains **Not Found**. A small number of API routes exist inside `apps/web/app/api/` instead (e.g. `apps/web/app/api/balance/route.ts`) — this is Next.js Route Handler code within the frontend app, not a separate backend application, and should not be conflated with `apps/api` when auditing backend status.
+Note: `apps/api` remains Not Found as of 2026-09-16. One API route handler exists inside `apps/web/app/api/balance/route.ts` instead — this is Next.js Route Handler code living in the frontend app, not a separate backend application, and should be evaluated as such.
 
 ---
 
@@ -236,8 +236,6 @@ If any required component cannot be verified:
 **Status: Not Verified**
 
 Do not claim production readiness.
-
-Note: a real, populated production Supabase database has been verified to exist (2026-09-16, direct introspection — 35 tables, working RPCs, real schema). This satisfies "production database" evidence. Frontend/backend deployment, monitoring, and billing integration remain unverified — production readiness as a whole is still **Not Verified**.
 
 ---
 
@@ -306,17 +304,17 @@ Framic AI is a creator-focused AI platform providing:
 
 # Current Development Phase
 
-Status: Foundation → Early Build
+Status: Foundation substantially complete; Authentication working; several capabilities Partial due to a verified repository/production schema gap (see `05-IMPLEMENTATION_STATUS.md`).
 
-Phase Completion (corrected 2026-09-16 to match `05-IMPLEMENTATION_STATUS.md`; this section previously said every phase was "Not Started," which was already false by the time this file was written):
+Phase Completion:
 
 - Foundation: In Progress
-- Authentication: Partial — signup/signin/signout verified working against real production trigger; never runtime-tested via `next dev`
-- Profiles: Partial — real production table verified, read-only in dashboard, no edit UI
-- Credits: Partial — mature production token-ledger backend verified; only balance read is wired into app code
-- Billing: Not Started (app-side) — production has payment/subscription RPCs, but zero app-side integration
-- AI Generation: Not Started — production has the full token-reservation flow; no `/generate` route exists
-- Asset Library: Partial — production table verified, read-only listing in dashboard
+- Authentication: Partial — working end-to-end against real production (PRs #6, #7), never runtime-tested via `next dev`
+- Profiles: Partial — dashboard reads real `profiles` table, no edit UI
+- Credits: Partial — `credit_wallets`/`credit_transactions` schema verified live; only `get_user_balance` (balance read) is wired, and only via an unmerged PR (#18); no reserve/settle/release/refund RPC or `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` objects exist anywhere — see Evidence Log below
+- Billing: Not Started — schema exists (`payments`/`subscriptions`/`webhook_events`, verified live on the connected Supabase project); no Paystack-related RPCs found on direct introspection; zero app-side code — see `docs/02-MODULES/05-PAYSTACK.md`
+- AI Generation: Not Started — `generation_jobs` schema exists; no reservation RPC or `/generate` route exists
+- Asset Library: Partial — dashboard reads real `generated_assets` table, no write path
 - Monitoring: Not Started
 - Deployment: Unable To Verify
 
@@ -331,11 +329,11 @@ Status: In Progress
 Tasks:
 
 - [x] Monorepo configuration
-- [x] Shared package structure (`packages/types` only; others not yet created)
+- [x] Shared package structure (`packages/types` only; others planned)
 - [x] Web application scaffold
-- [ ] API application scaffold (`apps/api` — Not Found)
-- [x] Database migration foundation (exists, but does not match production — see `05-IMPLEMENTATION_STATUS.md`)
-- [ ] Environment template (`.env.example` verified to reference unrelated/generic boilerplate, not the real stack — needs rewrite)
+- [ ] API application scaffold (`apps/api` Not Found)
+- [x] Database migration foundation (exists, but does not match real production — see `05-IMPLEMENTATION_STATUS.md`)
+- [ ] Environment template (`.env.example` verified to describe a different, generic setup — needs reconciliation)
 - [x] Documentation baseline
 
 ---
@@ -348,10 +346,10 @@ Tasks:
 
 - [x] Supabase Auth integration
 - [x] Login page
-- [x] Registration page (same form as login, mode-toggled)
+- [x] Registration page (combined with login page)
 - [ ] Password reset flow
-- [x] Session handling (middleware)
-- [x] Route protection (middleware)
+- [x] Session handling
+- [x] Route protection
 - [ ] Authentication tests
 
 ---
@@ -362,9 +360,9 @@ Status: Partial
 
 Tasks:
 
-- [x] Profiles table (real production table verified; repo migration file does not match it)
+- [x] Profiles table (real production, verified via introspection)
 - [ ] Profile API
-- [ ] Profile management UI (dashboard reads profile, does not edit it)
+- [ ] Profile management UI
 - [ ] Avatar support
 - [ ] Profile tests
 
@@ -376,11 +374,12 @@ Status: Partial
 
 Tasks:
 
-- [x] Credits schema (real production `token_ledgers`/`token_reservations`; repo migration's `credit_wallets` does not exist in production)
-- [x] Ledger system (verified via direct introspection: `reserve_generation_tokens`, `settle_generation_tokens`, `release_generation_tokens`, `refund_generation_tokens`)
-- [ ] Credit awarding (app-side — not wired)
-- [ ] Credit deductions (app-side — not wired)
-- [x] Audit history (`audit_logs` table referenced by ledger functions)
+- [x] Credits schema — verified live on the connected Supabase project (`gkvvecskbkwpcsuatklm`, `pg_class` introspection, 2026-09-20): `credit_wallets`, `credit_transactions` (immutable ledger — `UPDATE`/`DELETE` blocked by RLS policy). `token_ledgers`, `token_reservations`, `view_user_balances`, and `audit_logs` do **not** exist in this database and are not defined anywhere in `supabase/migrations/`. Prior claims that these were "real production" objects are corrected as of this entry.
+- [x] Balance read — `get_user_balance(p_user_id uuid)` exists live (`pg_proc` introspection, 2026-09-20), `STABLE SECURITY DEFINER`, reads `credit_wallets.balance` directly (not `view_user_balances`). Added by PR #18 (https://github.com/davidsun2026-v1/framic-ai/pull/18) — **open, not yet merged to `main`**; applied directly to the live database ahead of the migration file landing in the repository's default branch.
+- [ ] Reserve/settle/release/refund RPCs — **Not found.** No function by these or similar names exists live or in the repository. `pg_proc` on the connected project returns exactly four `public`-schema functions: `get_user_balance`, `handle_new_user`, `rls_auto_enable`, `update_profiles_updated_at`.
+- [ ] Credit awarding — no app code calls any credit-mutation RPC, because none exist yet.
+- [ ] Credit deductions — same; no RPC exists to call.
+- [ ] Audit history — **Not found.** No `audit_logs` table exists. `credit_transactions` is the only ledger-style table and nothing in application code currently writes to it.
 - [ ] Credits tests
 
 ---
@@ -391,8 +390,8 @@ Status: Not Started (app-side)
 
 Tasks:
 
-- [ ] Subscription plans (table exists in production; no `SUBSCRIPTION_MATRIX.md`, no app code)
-- [ ] Paystack integration (production RPCs exist; no app-side checkout/webhook)
+- [x] Subscription plans (real production tables exist; pricing content remains Unable To Verify per Subscription Governance)
+- [ ] Paystack integration (schema exists — `payments`/`subscriptions`/`webhook_events`, verified live; no Paystack-related RPCs found in `pg_proc` on direct introspection; no app-side checkout/webhook code — see `docs/02-MODULES/05-PAYSTACK.md`)
 - [ ] Webhook verification
 - [ ] Billing portal
 - [ ] Subscription sync
@@ -406,9 +405,9 @@ Status: Partial
 
 Tasks:
 
-- [x] Asset storage (real production `generated_assets` table verified)
-- [x] Asset ownership (RLS own-row SELECT policy verified)
-- [x] Asset listing (dashboard reads it)
+- [ ] Asset storage (no upload path in app code)
+- [x] Asset ownership (real production RLS + `user_id` column verified)
+- [x] Asset listing (dashboard reads real `generated_assets` table)
 - [ ] Asset deletion
 - [ ] Asset search
 - [ ] Asset tests
@@ -431,15 +430,15 @@ Tasks:
 
 ## EPIC-008 AI Generation
 
-Status: Not Started (app-side; production backend flow verified to already exist)
+Status: Not Started (app-side)
 
 Tasks:
 
 - [ ] Text-to-image
 - [ ] Image-to-image
-- [ ] Generation queue (production `generation_jobs` + reservation RPCs exist; no app integration)
+- [ ] Generation queue (`generation_jobs` schema exists; no reservation RPC exists — see EPIC-004 correction above — and no app code)
 - [ ] Generation history
-- [ ] Credit consumption (app-side)
+- [ ] Credit consumption
 - [ ] Generation tests
 
 ---
@@ -460,13 +459,13 @@ Tasks:
 
 ## EPIC-010 Deployment
 
-Status: Unable To Verify
+Status: Not Started
 
 Tasks:
 
 - [ ] Production build (never run — see `05-IMPLEMENTATION_STATUS.md` Manual Verification Pending)
 - [ ] Environment configuration
-- [ ] Database deployment (production database itself verified to exist and be populated with real schema)
+- [ ] Database deployment
 - [ ] Frontend deployment
 - [ ] Backend deployment
 - [ ] Smoke testing
@@ -476,39 +475,74 @@ Tasks:
 # Current Work Item
 
 Epic:
-EPIC-002 Authentication (active development), with EPIC-001 Foundation still in progress in parallel
+EPIC-004 Credits (documentation reconciliation)
 
 Status:
-Partial
+Active
 
 Last Completed Task:
-PR #8 — corrected dashboard and added `/api/balance` route to read real production schema instead of the repo's non-matching migration file
+Reconciled EPIC-004 Credits claims in this document, `apps/web/lib/auth/actions.ts`, and `apps/web/lib/supabase/service.ts` against direct `pg_class`/`pg_proc` introspection of the connected Supabase project. Removed unsupported `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs`/reserve-settle-release-refund-RPC claims; documented exactly what's verified (`credit_wallets`, `credit_transactions`, `get_user_balance`). See Evidence Log below for full query record.
 
 Current Task:
-Runtime verification of `apps/web` (`next dev`/`next build` against real credentials) — never yet performed; see "Manual Verification Pending" in `05-IMPLEMENTATION_STATUS.md`
+None active — awaiting review of this reconciliation and a decision on merging PR #18 (still open) before further credits work proceeds.
 
 Next Task:
-Reconcile `supabase/migrations/` with the real production schema (baseline migration), and/or scope EPIC-008 generation flow against the production RPCs that already exist
+Complete the Manual Verification Pending checklist in `05-IMPLEMENTATION_STATUS.md`, and update that document's Supabase contract findings to reflect this same reconciliation (it currently repeats the now-corrected `token_ledgers`/`token_reservations` claim).
 
 Blockers:
-- `supabase/migrations/20260910000000_init_schema.sql` does not match production and should not be trusted as schema source of truth
-- PR #5 (Next.js 14→16, a 2-major-version dependency bump) needs runtime testing before merge, not just CI
+None.
+
+---
+
+# Evidence Log — EPIC-004 Credits Reconciliation (2026-09-20)
+
+**Repository SHA inspected:** `main` @ `0ba55429673ac14bc6a12db4e6b013b0424d658f`; this correction committed on branch `docs/paystack-module-and-state-correction-2`.
+
+**Supabase project inspected:** `gkvvecskbkwpcsuatklm` (connected project; no credentials or connection strings recorded here).
+
+**Queries run and results (secrets omitted):**
+
+```sql
+select relname, relkind from pg_class c join pg_namespace n on c.relnamespace=n.oid
+where n.nspname='public' and relname in ('token_ledgers','token_reservations','view_user_balances','audit_logs');
+-- result: [] (zero rows — none of the four objects exist in any form)
+
+select p.proname, pg_get_function_identity_arguments(p.oid) as args
+from pg_proc p join pg_namespace n on p.pronamespace=n.oid where n.nspname='public' order by p.proname;
+-- result: get_user_balance(p_user_id uuid), handle_new_user(), rls_auto_enable(), update_profiles_updated_at()
+
+select tgname, tgrelid::regclass from pg_trigger where not tgisinternal order by tgname;
+-- result: on_auth_user_created (auth.users), profiles_updated_at_trigger (profiles),
+--         plus Supabase-internal triggers on cron.job/storage.*/realtime.subscription (not application-relevant)
+```
+
+**Files inspected:** `supabase/migrations/20260910000000_init_schema.sql`, `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`, `README.md`, `docs/02-MODULES/03-CREDITS.md`, `apps/web/lib/auth/actions.ts`, `apps/web/lib/supabase/service.ts`, PR #18 (state: open, merged: false, base SHA unchanged since creation).
+
+**Discrepancies found:**
+- This document's EPIC-004 section and Phase Completion line claimed `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` and verified reserve/settle/release/refund RPCs exist in "real production." None exist on the connected project.
+- `apps/web/lib/supabase/service.ts` contained a comment claiming `get_user_balance` was "verified against production" reading from `view_user_balances`, and referenced a second RPC `reserve_generation_tokens` — neither claim holds; corrected in this same change.
+- `apps/web/lib/auth/actions.ts` still references a migration filename (`20260915000000_add_user_signup_trigger.sql`) that never existed; the real fix landed in PR #18 as a differently-named file and is not yet merged — corrected in this same change.
+- PR #18's migration was applied directly to the live database but has not been merged into `main`; `main`'s `supabase/migrations/` still contains only the original `20260910000000_init_schema.sql`. The repository migration chain does not yet represent live database state.
+
+**Documentation corrections made:** this file (EPIC-004, Phase Completion, Repository Truth Hierarchy note, Subscription Governance note), `apps/web/lib/auth/actions.ts` comment, `apps/web/lib/supabase/service.ts` comment — all in this same commit/PR.
+
+**Unable to verify:** whether PR #18 was tested against a clean/non-production database before being applied (no test-database evidence found in the repository or PR); production build/type-check/lint/test execution (no CI workflow runs these — see Checks in the accompanying PR).
 
 ---
 
 # Last Verification
 
 Verified By:
-Repository Auditor (direct production database introspection performed this session)
+Repository Auditor (direct GitHub + Supabase introspection)
 
 Verification Date:
-2026-09-16
+2026-09-20
 
 Verification Commit:
-Multiple — see merged PRs #1, #4, #6, #7, #8 and this reconciliation commit
+See `05-IMPLEMENTATION_STATUS.md` for the full evidence ledger corresponding to this date, and the Evidence Log above for the EPIC-004-specific record.
 
 Verification Confidence:
-High for schema/backend claims (direct introspection). Unable To Verify for runtime application behavior (never executed).
+High for repository file evidence and production database schema/RPC evidence (direct introspection). Unable To Verify for runtime application behavior (never executed).
 
 ---
 

@@ -21,8 +21,10 @@ export async function signUpWithPassword(email: string, password: string) {
   }
 
   // Profile and wallet are created server-side by the on_auth_user_created
-  // trigger (see supabase/migrations/20260915000000_add_user_signup_trigger.sql).
-  // No client-side insert needed or attempted here.
+  // trigger (see supabase/migrations/20260918000000_add_signup_trigger_and_balance_rpc.sql).
+  // That migration was applied to the live database and merged into main
+  // via PR #18 (merged 2026-09-22). No client-side insert needed or
+  // attempted here.
 
   return { success: true, user: authData.user };
 }

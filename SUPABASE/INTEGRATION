@@ -1,0 +1,145 @@
+FRAMIC AI — SUPABASE INTEGRATION STANDARD
+
+Repository:
+davidsun2026-v1/framic-ai
+
+Purpose:
+Keep Framic AI's Supabase integration aligned with the existing Next.js architecture. Do not replace existing authentication or middleware files with generic Supabase tutorial code.
+
+1. Environment variables
+
+Use the existing Framic AI environment-variable convention.
+
+File:
+apps/web/.env.local
+
+Required:
+
+NEXT_PUBLIC_SUPABASE_URL=https://gkvvecskbkwpcsuatklm.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<SET_LOCALLY_ONLY>
+
+IMPORTANT:
+- Never commit .env.local.
+- Never commit Supabase keys or secrets to GitHub.
+- Do not paste the real key into source files, documentation, issues, PRs, screenshots, or chat.
+- Keep production/service-role credentials server-side only.
+- Do not replace NEXT_PUBLIC_SUPABASE_ANON_KEY with a second publishable-key convention unless the repository architecture is intentionally migrated and verified.
+
+2. Existing Framic AI authentication architecture
+
+Use the existing implementation as the source of truth.
+
+Relevant files:
+
+apps/web/lib/auth/actions.ts
+apps/web/lib/auth/middleware-utils.ts
+apps/web/middleware.ts
+apps/web/app/auth/callback/route.ts
+
+Do not create duplicate authentication helpers unless an audit proves they are required.
+
+3. Supabase SSR
+
+Framic AI should use the Supabase SSR pattern appropriate for the installed versions of:
+
+@supabase/supabase-js
+@supabase/ssr
+
+Server-side Supabase clients must preserve authenticated cookies/session handling.
+
+Browser-side clients must use only public environment variables.
+
+Service-role credentials must never be exposed to browser code.
+
+4. Middleware
+
+The existing Framic AI middleware is authoritative.
+
+Any Supabase session-refresh implementation must be reconciled with:
+
+apps/web/middleware.ts
+apps/web/lib/auth/middleware-utils.ts
+
+Do not overwrite middleware with the generic Supabase quickstart example.
+
+5. Authentication
+
+Authentication behavior must remain consistent across:
+
+Sign up
+Sign in
+Sign out
+Auth callback
+Session refresh
+Protected routes
+
+Use the existing Framic AI implementation and database schema rather than the example "todos" table from Supabase documentation.
+
+6. Database
+
+Supabase is the authoritative backend source of truth for Framic AI.
+
+Do not invent tables such as:
+
+todos
+
+Do not modify production Supabase data or schema unless explicitly authorized.
+
+Schema changes must be represented through Supabase migrations and verified against the actual project state.
+
+7. Security
+
+Never place:
+
+SUPABASE_SERVICE_ROLE_KEY
+
+or any other privileged secret in:
+
+Client components
+Browser bundles
+NEXT_PUBLIC_* variables
+GitHub source files
+README files
+Documentation
+Screenshots
+Issues
+Pull requests
+
+If a credential has accidentally been exposed, rotate/revoke it through Supabase and replace the local environment value.
+
+8. Agent Skills
+
+Supabase Agent Skills are optional developer tooling.
+
+If required for the development environment:
+
+npx skills add supabase/agent-skills
+
+Installing the skills does not replace or modify Framic AI's authentication architecture.
+
+9. Verification requirement
+
+Before declaring Supabase integration complete, verify:
+
+[ ] Environment variables use the repository convention
+[ ] No real credentials are committed
+[ ] Supabase SSR dependencies are installed
+[ ] Server client works
+[ ] Browser client works where required
+[ ] Middleware refreshes sessions correctly
+[ ] Auth callback works
+[ ] Protected routes enforce authentication
+[ ] Sign up works
+[ ] Sign in works
+[ ] Sign out works
+[ ] Typecheck passes
+[ ] Production build passes
+
+Status vocabulary:
+
+VERIFIED
+PARTIAL
+BROKEN
+NOT VERIFIED
+
+Do not mark an item VERIFIED without repository or runtime evidence.
