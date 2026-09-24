@@ -57,6 +57,11 @@ export default async function DashboardPage() {
 
   const displayName = profile?.full_name || profile?.email || user.email;
 
+  async function handleSignOut() {
+    'use server';
+    await signOut();
+  }
+
   return (
     <div className="min-h-screen bg-neutral-950 text-white">
       <header className="flex items-center justify-between border-b border-neutral-800 px-6 py-4">
@@ -81,7 +86,7 @@ export default async function DashboardPage() {
             + New generation
           </button>
 
-          <form action={signOut}>
+          <form action={handleSignOut}>
             <button
               type="submit"
               className="rounded-md border border-neutral-800 px-3 py-2 text-sm text-neutral-400 hover:text-white"
