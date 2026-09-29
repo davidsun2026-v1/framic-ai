@@ -20,6 +20,9 @@ Matching TypeScript contracts are defined in `packages/types/src/index.ts`: `Pay
 
 **Known drift:** live RLS policies on `webhook_events` currently number zero, though the migration file defines three (`Service role access only`, `Prevent updates`, `Prevent deletes`). Net effect is unchanged today (RLS default-denies with no policy; service role bypasses RLS regardless), but this should be reconciled before webhook write logic is built against it — see `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md`.
 
+## Repository RPC status
+As of `main` at `1cf88ba`, `supabase/migrations/` contains exactly two files: `20260910000000_init_schema.sql` and `20260918000000_add_signup_trigger_and_balance_rpc.sql`. Neither defines any Paystack, payment, subscription-renewal, or credit-grant function. Any live Paystack RPCs that may exist in the Supabase project are therefore **not on `main`** and are not repository evidence. Paystack work must build on the existing `payments`, `subscriptions`, and `webhook_events` tables above; do not introduce a parallel payments schema. If live RPCs are found on direct introspection, reconcile them into a migration before relying on them.
+
 ## Inputs / Outputs
 - **Input (checkout initiation):** authenticated user request specifying `type` (`subscription_charge` | `credit_purchase`) and, for subscriptions, a `plan_id`. Output: a Paystack authorization/checkout URL, and a `pending` row in `payments`.
 - **Input (webhook):** POST from Paystack with `x-paystack-signature` header and a `PaystackWebhookPayload` body. Output: a row in `webhook_events`, and — only after signature verification — an update to `payments`/`subscriptions` and a credit grant via the credits ledger (`credit_transactions`).
