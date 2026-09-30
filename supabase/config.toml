@@ -1,0 +1,6 @@
+# Supabase CLI configuration
+#
+# This file is intentionally minimal until the FRAMIC AI target Supabase
+# project is identified and its live configuration is verified. Do not place
+# credentials, service-role keys, or provider secrets here.
+project_id = "framic-ai"
