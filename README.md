@@ -54,11 +54,8 @@ Supabase Auth is the identity authority; application profile data belongs in `pu
 ├── apps/
 │   ├── web/                    # scaffolding started (auth, middleware)
 │   └── api/                    # not yet started
-├── packages/                  # shared workspaces (to be implemented)
-│   ├── ui/
-│   ├── core/
-│   ├── types/
-│   └── utils/
+├── packages/
+│   └── types/                 # initial shared domain types
 ├── docs/
 │   ├── 00-FOUNDATION/
 │   ├── 01-GETTING_STARTED/
@@ -102,4 +99,4 @@ A command or feature is considered available only after its required files exist
 
 MIT. See `LICENSE`.
 
-**Status:** Foundation / documentation phase — implementation not yet started.
+**Status:** Foundation / early implementation phase — repository scaffolding, domain types, auth/middleware, and initial database schema are present; core application business logic, integrations, testing, CI/CD, and production deployment remain to be implemented.
