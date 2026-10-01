@@ -311,7 +311,7 @@ Phase Completion:
 - Foundation: In Progress
 - Authentication: Partial — working end-to-end against real production (PRs #6, #7), never runtime-tested via `next dev`
 - Profiles: Partial — dashboard reads real `profiles` table, no edit UI
-- Credits: Partial — `credit_wallets`/`credit_transactions` schema verified live; only `get_user_balance` (balance read) is wired, and only via an unmerged PR (#18); no reserve/settle/release/refund RPC or `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` objects exist anywhere — see Evidence Log below
+- Credits: Partial — `credit_wallets`/`credit_transactions` schema verified live; `get_user_balance` (balance read) is wired and merged to `main` via PR #18; no reserve/settle/release/refund RPC or `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` objects exist anywhere — see Evidence Log below
 - Billing: Not Started — schema exists (`payments`/`subscriptions`/`webhook_events`, verified live on the connected Supabase project); no Paystack-related RPCs found on direct introspection; zero app-side code — see `docs/02-MODULES/05-PAYSTACK.md`
 - AI Generation: Not Started — `generation_jobs` schema exists; no reservation RPC or `/generate` route exists
 - Asset Library: Partial — dashboard reads real `generated_assets` table, no write path
@@ -375,7 +375,7 @@ Status: Partial
 Tasks:
 
 - [x] Credits schema — verified live on the connected Supabase project (`gkvvecskbkwpcsuatklm`, `pg_class` introspection, 2026-09-20): `credit_wallets`, `credit_transactions` (immutable ledger — `UPDATE`/`DELETE` blocked by RLS policy). `token_ledgers`, `token_reservations`, `view_user_balances`, and `audit_logs` do **not** exist in this database and are not defined anywhere in `supabase/migrations/`. Prior claims that these were "real production" objects are corrected as of this entry.
-- [x] Balance read — `get_user_balance(p_user_id uuid)` exists live (`pg_proc` introspection, 2026-09-20), `STABLE SECURITY DEFINER`, reads `credit_wallets.balance` directly (not `view_user_balances`). Added by PR #18 (https://github.com/davidsun2026-v1/framic-ai/pull/18) — **open, not yet merged to `main`**; applied directly to the live database ahead of the migration file landing in the repository's default branch.
+- [x] Balance read — `get_user_balance(p_user_id uuid)` exists live (`pg_proc` introspection, 2026-09-20), `STABLE SECURITY DEFINER`, reads `credit_wallets.balance` directly (not `view_user_balances`). Added by PR #18 (https://github.com/davidsun2026-v1/framic-ai/pull/18) and merged to `main` (2026-09-22); the migration `supabase/migrations/20260918000000_add_signup_trigger_and_balance_rpc.sql` is present in the default branch.
 - [ ] Reserve/settle/release/refund RPCs — **Not found.** No function by these or similar names exists live or in the repository. `pg_proc` on the connected project returns exactly four `public`-schema functions: `get_user_balance`, `handle_new_user`, `rls_auto_enable`, `update_profiles_updated_at`.
 - [ ] Credit awarding — no app code calls any credit-mutation RPC, because none exist yet.
 - [ ] Credit deductions — same; no RPC exists to call.
@@ -481,13 +481,13 @@ Status:
 Active
 
 Last Completed Task:
-Reconciled EPIC-004 Credits claims in this document, `apps/web/lib/auth/actions.ts`, and `apps/web/lib/supabase/service.ts` against direct `pg_class`/`pg_proc` introspection of the connected Supabase project. Removed unsupported `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs`/reserve-settle-release-refund-RPC claims; documented exactly what's verified (`credit_wallets`, `credit_transactions`, `get_user_balance`). See Evidence Log below for full query record.
+Updated `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md` to match the EPIC-004 reconciliation already recorded in this document (PR #19) — it previously still described the pre-2026-09-20 narrative (unidentified Supabase project, "BROKEN / NOT VERIFIED" credits) and contradicted this file's own findings. Also corrected the PR #18 status references in this document (below) from "open, not yet merged" to merged, since PR #18 merged 2026-09-22.
 
 Current Task:
-None active — awaiting review of this reconciliation and a decision on merging PR #18 (still open) before further credits work proceeds.
+None active — awaiting review of the `05-IMPLEMENTATION_STATUS.md` reconciliation PR.
 
 Next Task:
-Complete the Manual Verification Pending checklist in `05-IMPLEMENTATION_STATUS.md`, and update that document's Supabase contract findings to reflect this same reconciliation (it currently repeats the now-corrected `token_ledgers`/`token_reservations` claim).
+Address the one remaining open drift item: live RLS policy count/names on `webhook_events` do not match `supabase/migrations/20260910000000_init_schema.sql` (migration defines three policies; live has zero). Then proceed to the Manual Verification Pending checklist (runtime `next dev`/`next build`, auth/balance smoke tests) in `05-IMPLEMENTATION_STATUS.md`.
 
 Blockers:
 None.
@@ -516,15 +516,15 @@ select tgname, tgrelid::regclass from pg_trigger where not tgisinternal order by
 --         plus Supabase-internal triggers on cron.job/storage.*/realtime.subscription (not application-relevant)
 ```
 
-**Files inspected:** `supabase/migrations/20260910000000_init_schema.sql`, `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`, `README.md`, `docs/02-MODULES/03-CREDITS.md`, `apps/web/lib/auth/actions.ts`, `apps/web/lib/supabase/service.ts`, PR #18 (state: open, merged: false, base SHA unchanged since creation).
+**Files inspected:** `supabase/migrations/20260910000000_init_schema.sql`, `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md`, `README.md`, `docs/02-MODULES/03-CREDITS.md`, `apps/web/lib/auth/actions.ts`, `apps/web/lib/supabase/service.ts`, PR #18 (state at time of audit: open, merged: false, base SHA unchanged since creation — PR #18 merged 2026-09-22, two days after this audit).
 
 **Discrepancies found:**
 - This document's EPIC-004 section and Phase Completion line claimed `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` and verified reserve/settle/release/refund RPCs exist in "real production." None exist on the connected project.
 - `apps/web/lib/supabase/service.ts` contained a comment claiming `get_user_balance` was "verified against production" reading from `view_user_balances`, and referenced a second RPC `reserve_generation_tokens` — neither claim holds; corrected in this same change.
-- `apps/web/lib/auth/actions.ts` still references a migration filename (`20260915000000_add_user_signup_trigger.sql`) that never existed; the real fix landed in PR #18 as a differently-named file and is not yet merged — corrected in this same change.
-- PR #18's migration was applied directly to the live database but has not been merged into `main`; `main`'s `supabase/migrations/` still contains only the original `20260910000000_init_schema.sql`. The repository migration chain does not yet represent live database state.
+- `apps/web/lib/auth/actions.ts` still references a migration filename (`20260915000000_add_user_signup_trigger.sql`) that never existed; the real fix landed in PR #18 as a differently-named file — corrected in this same change.
+- At time of this audit (2026-09-20), PR #18's migration had been applied directly to the live database but had not yet been merged into `main`. PR #18 merged 2026-09-22; `main`'s `supabase/migrations/` now contains that migration file, so the repository migration chain matches live database state for these objects as of this update.
 
-**Documentation corrections made:** this file (EPIC-004, Phase Completion, Repository Truth Hierarchy note, Subscription Governance note), `apps/web/lib/auth/actions.ts` comment, `apps/web/lib/supabase/service.ts` comment — all in this same commit/PR.
+**Documentation corrections made:** this file (EPIC-004, Phase Completion, Repository Truth Hierarchy note, Subscription Governance note), `apps/web/lib/auth/actions.ts` comment, `apps/web/lib/supabase/service.ts` comment — all in PR #19. `docs/00-FOUNDATION/05-IMPLEMENTATION_STATUS.md` reconciled separately in a follow-up PR after PR #19 left it out of sync.
 
 **Unable to verify:** whether PR #18 was tested against a clean/non-production database before being applied (no test-database evidence found in the repository or PR); production build/type-check/lint/test execution (no CI workflow runs these — see Checks in the accompanying PR).
 
@@ -536,7 +536,7 @@ Verified By:
 Repository Auditor (direct GitHub + Supabase introspection)
 
 Verification Date:
-2026-09-20
+2026-09-22
 
 Verification Commit:
 See `05-IMPLEMENTATION_STATUS.md` for the full evidence ledger corresponding to this date, and the Evidence Log above for the EPIC-004-specific record.
