@@ -18,6 +18,14 @@
 --   rolls back automatically (PostgreSQL transaction semantics).
 --   There is never a state where balance is updated without a ledger entry.
 --
+-- Error Behavior:
+--   Expected business outcomes (granted, already_processed, conflict,
+--   invalid_request, wallet_not_found) are returned as result rows.
+--   Unexpected database errors (constraint violations, ledger insert failures,
+--   unexpected SQL errors) are NOT caught; they propagate to the caller as
+--   PostgreSQL errors and abort the transaction. This function intentionally
+--   contains no EXCEPTION block.
+--
 -- Concurrency Safety:
 --   Wallet row is locked (SELECT ... FOR UPDATE) to prevent concurrent mutations.
 --   Idempotency is checked twice: before lock (fast path) and after lock
@@ -169,7 +177,8 @@ BEGIN
   WHERE id = v_wallet_id;
 
   -- STEP 8: Insert ledger transaction
-  -- (If this fails, wallet update is rolled back automatically)
+  -- (If this fails, the error propagates and the wallet update is rolled back
+  --  with the enclosing transaction)
   
   INSERT INTO public.credit_transactions (
     id,
@@ -202,13 +211,6 @@ BEGIN
   -- STEP 9: Return success
   
   RETURN QUERY SELECT 'granted'::TEXT, v_transaction_id, v_balance_after, NULL::TEXT;
-
-EXCEPTION WHEN OTHERS THEN
-  -- Catch unexpected database errors (FK violations, constraint violations, etc.)
-  -- Return error; let transaction rollback naturally
-  RETURN QUERY SELECT 'database_error'::TEXT, NULL::UUID, NULL::BIGINT, 
-    ('Unexpected error: ' || SQLERRM)::TEXT;
-  RETURN;
 END;
 $$;
 
