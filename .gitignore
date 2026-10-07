@@ -65,9 +65,9 @@ tmp/
 .eslintcache
 .stylelintcache
 
-# Supabase
+# Supabase local state (safe to exclude)
+supabase/.temp/
 supabase/.branches/
-supabase/seed.sql
 
 # Vercel
 .vercel/
