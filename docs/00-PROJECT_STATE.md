@@ -177,7 +177,9 @@ Do not invent:
 
 Do not treat README, UI copy, environment variables, code constants, or provider configuration as the subscription source of truth unless the repository explicitly establishes that authority.
 
-Note: real production has `subscription_plans`/`subscriptions` tables and renewal RPCs (verified via direct database introspection, 2026-09-16), but `SUBSCRIPTION_MATRIX.md` still does not exist in this repository. Pricing/plan details therefore remain **Unable To Verify** from repository evidence alone, even though the underlying tables exist. A business document ("Framic AI — Subscription Tiers & Credit Unit Economics", supplied 2026-09-20) claims `docs/SUBSCRIPTION_TIERS.md` as its authoritative source; that file also does not exist in the repository. Per this section's own rule, an external document is not repository evidence — its pricing/tier figures remain **Unable To Verify** until a matching file exists in the repository at the governed path.
+Update (2026-10-08): `docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md` now exists on `main` (PR #32). It records the three v1 plans (`starter`, `pro`, `business`) with monthly credits and kobo prices, approved by the founder on 2026-10-08, and it is the governed source of truth for those fields. `.env.example` carries the same figures as a local template only. Plan limits that are not in the matrix (maximum resolution, video duration, queue priority, commercial-use policy, storage allowance, concurrent-job limit, Paystack plan codes) remain undecided and **Unable To Verify**.
+
+Correction (2026-10-08): an earlier note in this section claimed production has a `subscription_plans` table. A live introspection of project `gkvvecskbkwpcsuatklm` on 2026-10-08 found exactly these `public` tables: `profiles`, `credit_wallets`, `credit_transactions`, `subscriptions`, `payments`, `generated_assets`, `generation_jobs`, `webhook_events`. There is no `subscription_plans` table. The business document "Framic AI — Subscription Tiers & Credit Unit Economics" (supplied 2026-09-20) claims `docs/SUBSCRIPTION_TIERS.md` as its authoritative source; that file does not exist in the repository, and an external document is not repository evidence.
 
 ---
 
@@ -390,7 +392,7 @@ Status: Not Started (app-side)
 
 Tasks:
 
-- [x] Subscription plans (real production tables exist; pricing content remains Unable To Verify per Subscription Governance)
+- [x] Subscription plans — governed by `docs/02-MODULES/BILLING/SUBSCRIPTION_MATRIX.md` (approved 2026-10-08); the `subscriptions` table exists live, and there is no `subscription_plans` table
 - [ ] Paystack integration (schema exists — `payments`/`subscriptions`/`webhook_events`, verified live; no Paystack-related RPCs found in `pg_proc` on direct introspection; no app-side checkout/webhook code — see `docs/02-MODULES/05-PAYSTACK.md`)
 - [ ] Webhook verification
 - [ ] Billing portal
