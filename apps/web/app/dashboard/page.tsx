@@ -3,11 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getUserBalance } from '@/lib/supabase/service';
 import { signOut } from '@/lib/auth/actions';
 
-// Column names below (full_name, asset_type, storage_url) are verified
-// against the real production schema via direct database introspection —
-// NOT against supabase/migrations/20260910000000_init_schema.sql, which
-// does not match production and should not be trusted as schema truth
-// until it is reconciled.
+// Query columns match the verified live Framic Supabase schema.
 export default async function DashboardPage() {
   const supabase = await createClient();
   const {
@@ -19,10 +15,10 @@ export default async function DashboardPage() {
   }
 
   const [profileResult, assetsResult, balanceResult] = await Promise.allSettled([
-    supabase.from('profiles').select('email, full_name').eq('id', user.id).single(),
+    supabase.from('profiles').select('email, display_name').eq('id', user.id).single(),
     supabase
       .from('generated_assets')
-      .select('id, asset_type, storage_url, created_at')
+      .select('id, type, storage_bucket, storage_key, public_url, cdn_url, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(12),
@@ -55,7 +51,7 @@ export default async function DashboardPage() {
   const assets = assetsResult.status === 'fulfilled' ? assetsResult.value.data : null;
   const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : 0;
 
-  const displayName = profile?.full_name || profile?.email || user.email;
+  const displayName = profile?.display_name || profile?.email || user.email;
 
   async function handleSignOut() {
     'use server';
@@ -111,12 +107,12 @@ export default async function DashboardPage() {
                 key={asset.id}
                 className="aspect-square overflow-hidden rounded-lg border border-neutral-800 bg-neutral-900"
               >
-                {asset.asset_type === 'image' && asset.storage_url ? (
+                {asset.type === 'image' && (asset.cdn_url || asset.public_url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={asset.storage_url} alt="" className="h-full w-full object-cover" />
+                  <img src={asset.cdn_url || asset.public_url || ""} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-neutral-500">
-                    {asset.asset_type}
+                    {asset.type}
                   </div>
                 )}
               </div>
