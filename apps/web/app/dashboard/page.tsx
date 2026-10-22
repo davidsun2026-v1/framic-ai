@@ -109,7 +109,7 @@ export default async function DashboardPage() {
               >
                 {asset.type === 'image' && (asset.cdn_url || asset.public_url) ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={asset.cdn_url || asset.public_url || ""} alt="" className="h-full w-full object-cover" />
+                  <img src={asset.cdn_url || asset.public_url || ''} alt="" className="h-full w-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center text-xs text-neutral-500">
                     {asset.type}
