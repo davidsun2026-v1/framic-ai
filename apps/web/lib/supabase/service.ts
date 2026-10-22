@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-import type { GrantCreditsInput, GrantCreditsRpcResult } from '@framic/types';
+import type { GrantCreditsInput, GrantCreditsRpcResult } from '@framic/types/src';
 
 // Service-role Supabase client. SERVER-ONLY — never import this file from a
 // Client Component, and never expose SUPABASE_SERVICE_ROLE_KEY to the browser.
