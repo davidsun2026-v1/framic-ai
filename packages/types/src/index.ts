@@ -26,6 +26,23 @@ export interface UserProfile {
   lastLoginAt: Date | null;
 }
 
+/** Raw row shape for the live public.profiles table (snake_case database columns). */
+export interface ProfileDatabaseRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  onboarding_completed: boolean | null;
+  onboarding_step: string | null;
+  preferred_language: string | null;
+  timezone: string | null;
+  status: string;
+  role: string;
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
 export interface CreateProfileInput {
   email: string;
   displayName?: string;
@@ -64,6 +81,25 @@ export interface CreditTransaction {
   metadata: Record<string, unknown>;
   createdAt: Date;
   createdBy: string; // e.g., 'user_action', 'payment_webhook', 'admin_adjustment'
+}
+
+/** Arguments accepted by the live public.grant_credits RPC. */
+export interface GrantCreditsRpcArgs {
+  p_user_id: string;
+  p_amount: number;
+  p_reason: string;
+  p_idempotency_key: string;
+  p_type?: CreditTransactionType;
+  p_correlation_id?: string | null;
+  p_metadata?: Record<string, unknown>;
+  p_created_by?: string;
+}
+
+/** One row returned by public.grant_credits. */
+export interface GrantCreditsRpcResult {
+  transaction_id: string;
+  new_balance: number;
+  duplicate: boolean;
 }
 
 export interface CreditReservationRequest {
@@ -277,6 +313,30 @@ export interface GeneratedAsset {
   updatedAt: Date;
   archivedAt: Date | null;
   deletedAt: Date | null;
+}
+
+/** Raw row shape for the live public.generated_assets table. */
+export interface GeneratedAssetDatabaseRow {
+  id: string;
+  user_id: string;
+  type: AssetType;
+  mime_type: string;
+  source_type: AssetSourceType;
+  generation_job_id: string | null;
+  storage_bucket: string;
+  storage_key: string;
+  file_size_bytes: number;
+  public_url: string | null;
+  cdn_url: string | null;
+  original_filename: string | null;
+  dimensions: { width?: number; height?: number } | null;
+  duration_ms: number | null;
+  metadata: Record<string, unknown> | null;
+  status: AssetStatus;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  deleted_at: string | null;
 }
 
 // ============================================================================
