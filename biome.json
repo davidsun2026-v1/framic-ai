@@ -5,20 +5,25 @@
     "clientKind": "git",
     "useIgnoreFile": true
   },
+  "files": {
+    "ignore": ["node_modules", "dist", ".next", "coverage", "**/*.config.js"]
+  },
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 100,
-    "trailingComma": "es5",
-    "semicolons": "always",
-    "arrowParentheses": "always",
-    "bracketSpacing": true,
-    "jsxQuoteStyle": "double",
-    "quoteStyle": "single",
-    "attributePosition": "auto",
-    "include": ["**/*.{js,jsx,ts,tsx,json,md}"],
-    "exclude": ["node_modules", "dist", ".next", "coverage"]
+    "attributePosition": "auto"
+  },
+  "javascript": {
+    "formatter": {
+      "arrowParentheses": "always",
+      "bracketSpacing": true,
+      "jsxQuoteStyle": "double",
+      "quoteStyle": "single",
+      "semicolons": "always",
+      "trailingCommas": "es5"
+    }
   },
   "linter": {
     "enabled": true,
@@ -88,8 +93,7 @@
         "useWhile": "warn"
       }
     },
-    "include": ["apps/**/*.{js,jsx,ts,tsx}", "packages/**/*.{js,jsx,ts,tsx}"],
-    "exclude": ["node_modules", "dist", ".next", "coverage", "**/*.config.js"]
+    "include": ["apps/**/*.{js,jsx,ts,tsx}", "packages/**/*.{js,jsx,ts,tsx}"]
   },
   "organizeImports": {
     "enabled": true,
