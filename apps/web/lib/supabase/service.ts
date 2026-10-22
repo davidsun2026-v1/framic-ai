@@ -1,4 +1,5 @@
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import type { GrantCreditsInput, GrantCreditsRpcResult } from '@framic/types';
 
 // Service-role Supabase client. SERVER-ONLY — never import this file from a
 // Client Component, and never expose SUPABASE_SERVICE_ROLE_KEY to the browser.
@@ -38,4 +39,35 @@ export async function getUserBalance(userId: string): Promise<number> {
   }
 
   return data ?? 0;
+}
+
+
+/**
+ * Apply an atomic credit-ledger mutation through the verified live eight-argument
+ * grant_credits RPC. This utility is server-only and must only be called after
+ * the server has independently verified the event that authorizes the mutation.
+ */
+export async function grantCredits(input: GrantCreditsInput): Promise<GrantCreditsRpcResult> {
+  const service = createServiceClient();
+  const { data, error } = await service.rpc('grant_credits', {
+    p_user_id: input.userId,
+    p_amount: input.amount,
+    p_reason: input.reason,
+    p_idempotency_key: input.idempotencyKey,
+    p_type: input.type ?? 'grant',
+    p_correlation_id: input.correlationId ?? null,
+    p_metadata: input.metadata ?? {},
+    p_created_by: input.createdBy ?? 'payment_webhook',
+  });
+
+  if (error) {
+    throw new Error(`Failed to grant credits: ${error.message}`);
+  }
+
+  const result = Array.isArray(data) ? data[0] : data;
+  if (!result) {
+    throw new Error('grant_credits returned no result');
+  }
+
+  return result as GrantCreditsRpcResult;
 }
