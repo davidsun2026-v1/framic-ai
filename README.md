@@ -140,7 +140,7 @@ In Framic AI, computational workloads are strictly metered and billed in **Token
 This repository is constructed following an explicit 10-step sequence:
 
 - [x] **Commit 1 — Repository Foundation** (`README.md`, `docs/00-FOUNDATION/00-REPOSITORY_LAYOUT.md`, and deploy targets)
-- [ ] **Commit 2 — Documentation** (Product Vision, Architecture, Security, and Workflows)
+- [x] **Commit 2 — Documentation** (`docs/00-FOUNDATION/08-PRODUCT_VISION_AND_STANDARDS.md` covering Vision, Goals, Architecture, Security, Standards, Branding, and Contributions)
 - [ ] **Commit 3 — Product Blueprint** (Functional specifications and capability boundaries)
 - [ ] **Commit 4 — Design System Specs** (UI tokens, typography, visual dark-room aesthetics)
 - [ ] **Commit 5 — Technical Specifications** (Video & Image generation pipelines, Token engine)
