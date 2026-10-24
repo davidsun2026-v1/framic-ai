@@ -17,8 +17,7 @@
     "jsxQuoteStyle": "double",
     "quoteStyle": "single",
     "attributePosition": "auto",
-    "include": ["**/*.{js,jsx,ts,tsx,json,md}"],
-    "exclude": ["node_modules", "dist", ".next", "coverage"]
+    "include": ["**/*.{js,jsx,ts,tsx,json,md}"]
   },
   "linter": {
     "enabled": true,
@@ -93,7 +92,6 @@
   },
   "organizeImports": {
     "enabled": true,
-    "include": ["**/*.{js,jsx,ts,tsx}"],
-    "exclude": ["node_modules", "dist", ".next"]
+    "include": ["**/*.{js,jsx,ts,tsx}"]
   }
 }
