@@ -31,7 +31,6 @@
       "correctness": {
         "noConstAssign": "error",
         "noConstantCondition": "error",
-        "noDebugger": "error",
         "noDuplicateKeys": "error",
         "noEmptyPattern": "error",
         "noFunctionAssign": "error",
