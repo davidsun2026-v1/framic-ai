@@ -26,6 +26,26 @@ export interface UserProfile {
   lastLoginAt: Date | null;
 }
 
+/**
+ * Raw row shape returned by public.profiles. Keep database column names in
+ * snake_case here; UserProfile remains the application/domain representation.
+ */
+export interface ProfileRow {
+  id: string;
+  email: string;
+  display_name: string | null;
+  avatar_url: string | null;
+  onboarding_completed: boolean;
+  onboarding_step: UserProfile['onboardingStep'];
+  preferred_language: string;
+  timezone: string;
+  status: UserProfile['status'];
+  role: UserProfile['role'];
+  created_at: string;
+  updated_at: string;
+  last_login_at: string | null;
+}
+
 export interface CreateProfileInput {
   email: string;
   displayName?: string;
@@ -64,6 +84,29 @@ export interface CreditTransaction {
   metadata: Record<string, unknown>;
   createdAt: Date;
   createdBy: string; // e.g., 'user_action', 'payment_webhook', 'admin_adjustment'
+}
+
+/**
+ * Application input for the live eight-argument public.grant_credits RPC.
+ * The service wrapper always sends all eight named parameters, applying the
+ * same defaults as the live database function when optional fields are omitted.
+ */
+export interface GrantCreditsInput {
+  userId: string;
+  amount: number;
+  reason: string;
+  idempotencyKey: string;
+  type?: CreditTransactionType;
+  correlationId?: string | null;
+  metadata?: Record<string, unknown>;
+  createdBy?: string;
+}
+
+/** Row returned by public.grant_credits. */
+export interface GrantCreditsRpcResult {
+  transaction_id: string;
+  new_balance: number;
+  duplicate: boolean;
 }
 
 export interface CreditReservationRequest {
@@ -252,6 +295,33 @@ export interface CreateGenerationJobRequest {
 export type AssetType = 'image' | 'video' | 'audio';
 export type AssetSourceType = 'generated' | 'uploaded';
 export type AssetStatus = 'active' | 'archived' | 'deleted';
+
+/**
+ * Raw row shape returned by public.generated_assets. Date/time values are
+ * ISO strings at the Supabase JSON boundary; GeneratedAsset is the domain type.
+ */
+export interface GeneratedAssetRow {
+  id: string;
+  user_id: string;
+  type: AssetType;
+  mime_type: string;
+  source_type: AssetSourceType;
+  generation_job_id: string | null;
+  storage_bucket: string;
+  storage_key: string;
+  file_size_bytes: number;
+  public_url: string | null;
+  cdn_url: string | null;
+  original_filename: string | null;
+  dimensions: { width?: number; height?: number } | null;
+  duration_ms: number | null;
+  metadata: Record<string, unknown>;
+  status: AssetStatus;
+  created_at: string;
+  updated_at: string;
+  archived_at: string | null;
+  deleted_at: string | null;
+}
 
 export interface GeneratedAsset {
   id: string; // UUID
