@@ -35,12 +35,12 @@
     "db:seed": "ts-node scripts/seed-database.ts",
     "db:reset": "supabase db reset",
     "db:types": "supabase gen types typescript --local > packages/types/database.types.ts",
-    "turbo:build": "turbo build --no-cache",
-    "turbo:lint": "turbo lint --no-cache",
-    "turbo:test": "turbo test --no-cache",
+    "turbo:build": "turbo build",
+    "turbo:lint": "turbo lint",
+    "turbo:test": "turbo test",
     "clean": "turbo run clean && rm -rf node_modules .next dist",
     "vercel-build": "turbo build --filter=web",
-    "postinstall": "turbo run build --no-cache"
+    "postinstall": "turbo run build"
   },
   "workspaces": [
     "apps/*",
