@@ -21,7 +21,7 @@ export async function GET() {
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : 'Failed to fetch balance' },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
