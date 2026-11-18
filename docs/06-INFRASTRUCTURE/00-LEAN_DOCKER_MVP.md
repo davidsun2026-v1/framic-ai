@@ -149,8 +149,8 @@ Staging must be isolated from production and must never reuse production credent
 
 Two supported deployment shapes remain possible and must be chosen when staging is provisioned:
 
-- **Compose staging:** run the same App and Worker images with isolated staging PostgreSQL and Redis services, private networking, durable database storage, and TLS-terminated ingress.
-- **Managed staging dependencies:** run App and Worker containers while using dedicated staging-managed PostgreSQL/Supabase and Redis services. This is preferred where the platform already supplies managed database and queue services.
+- **Compose staging:** run the same App and Worker images with isolated staging PostgreSQL-compatible storage and Redis services, private networking, durable database storage, and TLS-terminated ingress. The App must also use a dedicated Supabase-compatible Auth/API endpoint (for example, the Supabase CLI-managed local stack or an isolated staging Supabase project); PostgreSQL plus Redis alone is not a complete staging backend.
+- **Managed staging dependencies:** run App and Worker containers while using a dedicated staging Supabase project for PostgreSQL, Auth, and API services, plus an isolated Redis service. This is preferred where the platform already supplies managed database and queue services.
 
 In either shape:
 
