@@ -13,6 +13,8 @@ import { updateSession } from './middleware-utils';
 
 describe('updateSession', () => {
   beforeEach(() => {
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
     getSession.mockResolvedValue({ data: { session: null } });
   });
 
