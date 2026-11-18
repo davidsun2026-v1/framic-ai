@@ -39,7 +39,7 @@
     "turbo:lint": "turbo lint --no-cache",
     "turbo:test": "turbo test --no-cache",
     "clean": "turbo run clean && rm -rf node_modules .next dist",
-    "vercel-build": "turbo build --filter=web",
+    "vercel-build": "turbo build --filter=web"
   },
   "workspaces": [
     "apps/*",
