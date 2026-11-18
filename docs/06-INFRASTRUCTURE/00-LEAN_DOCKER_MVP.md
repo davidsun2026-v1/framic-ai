@@ -9,7 +9,7 @@
 
 Define the smallest useful container topology for developing and exercising Framic AI's asynchronous generation path without introducing a self-hosted inference fleet or changing production services.
 
-The local Compose profile contains four services:
+The local Compose profile defines four logical services (App, Database, Redis, and Worker). The Database role must be Supabase-compatible for full application integration; it is not satisfied by a bare PostgreSQL image alone.
 
 1. **App** — the existing Next.js web application.
 2. **Database** — local PostgreSQL for isolated development and integration tests.
@@ -63,19 +63,22 @@ PostgreSQL owns durable application and financial state. Redis transports work; 
 - Authenticates requests and validates generation parameters.
 - Resolves the authoritative model and price configuration.
 - Performs the required atomic credit reservation through the approved database contract before acknowledging billable work.
-- Creates/updates the durable generation-job record and publishes an idempotent queue message.
+- Creates the durable generation-job record, credit reservation, and transactional outbox event in one database transaction.
 - Returns an asynchronous job identifier; it must not wait for a long-running provider inference request in the browser request path.
+- A separate dispatcher publishes pending outbox events to Redis and records delivery. It retries safely until delivery is confirmed; duplicate publication is expected and consumers remain idempotent.
 
 The app must not create an alternate credit balance or bypass the ledger.
 
 ### 3.2 Database
 
-- Runs PostgreSQL locally with a persistent named volume for developer data.
-- Applies only repository-reviewed migrations against the local database.
-- Stores profiles, wallets, credit transactions, generation jobs, webhook/audit events, and asset metadata according to the verified schema contract.
+- Provides the PostgreSQL persistence and Supabase Auth/API compatibility required by the existing application.
+- For full local application integration, use the Supabase CLI-managed local stack (or a separately configured isolated Supabase project). A plain PostgreSQL container does not provide Supabase Auth, PostgREST, or the Supabase API endpoints expected by a Supabase client.
+- The Compose `db` role may represent the database dependency logically; the Supabase CLI stack can run its supporting services outside the four-service Compose file. Document the actual connection URLs and startup dependency when implementation is selected.
+- Applies only repository-reviewed migrations against the isolated local database.
+- Stores profiles, wallets, credit transactions, generation jobs, outbox events, webhook/audit events, and asset metadata according to the verified schema contract.
 - Enforces transactional invariants and uniqueness constraints used for idempotency.
 
-The local PostgreSQL container is a development dependency, not a proposal to replace Supabase in production. Do not run local reset or destructive migration commands against production.
+A local Supabase stack or isolated staging project is a development dependency, not a proposal to replace or modify production Supabase. Never point local reset or destructive migration commands at production.
 
 ### 3.3 Redis queue
 
@@ -121,7 +124,7 @@ The planned Compose file belongs under `deploy/docker/` when implementation is a
 | Service | Local exposure | Persistence | Dependency / health gate |
 |---|---|---|---|
 | `app` | Browser-facing development port only | No authoritative local state | Wait for healthy database and Redis |
-| `db` | Loopback-only developer port, if needed | Named PostgreSQL volume | PostgreSQL health check |
+| `db` | Supabase-compatible local database dependency; loopback-only developer access if exposed | Persistent local database volume | Supabase local stack readiness / PostgreSQL health check |
 | `redis` | No host port by default | Queue data may be ephemeral locally | Redis ping health check |
 | `worker` | No public port | Durable state remains in PostgreSQL | Wait for healthy database and Redis |
 
@@ -132,6 +135,7 @@ Compose requirements:
 - Publish only the App port by default. Database access, if needed for a local developer tool, must bind to loopback.
 - Do not publish Redis in the default profile.
 - Configure health checks and service readiness; container start order alone is not readiness.
+- The local Supabase CLI-managed stack is an explicit prerequisite for full Auth/API integration unless an isolated compatible Supabase endpoint is configured. Do not imply that a plain PostgreSQL container is a complete Supabase replacement.
 - Use a named database volume and document how to reset local data safely.
 - Run the App and Worker as non-root users where their base images support it.
 - Apply resource limits where supported and set a bounded worker concurrency.
@@ -192,6 +196,10 @@ Rules:
 
 Queue acknowledgement must occur only after the worker has safely persisted the relevant transition or durable retry state.
 
+### 8.1 Database-to-queue publish gap
+
+The App must not rely on a best-effort Redis publish performed after committing the job and reservation. That creates a crash window in which a valid reservation exists but no queue message is delivered. The job, reservation, and outbox event must be written atomically in one PostgreSQL transaction. A dispatcher reads undelivered outbox rows, publishes the job identifier to Redis, and marks the event delivered only after successful publication. If it crashes before marking delivery, it republishes; duplicate delivery is safe because the worker reloads durable state and enforces idempotency. Outbox age and retry exhaustion must be observable and recoverable. A database-polling dispatcher is an acceptable implementation alternative only if it provides equivalent durable retry and idempotency guarantees.
+
 ## 9. Observability and operations
 
 The MVP should expose health/readiness checks for App, PostgreSQL, Redis, and Worker. Structured operational logs should include correlation/job identifiers and state transitions, but exclude secrets, prompts, and media. Metrics should cover queue depth, oldest queued-job age, worker concurrency, retry counts, provider latency, terminal failure counts, and reservation-to-settlement outcomes.
@@ -226,6 +234,8 @@ Before runtime implementation is considered complete:
 - [ ] Verify the authoritative database schema and ledger RPC signatures.
 - [ ] Select and document the Redis queue library and versioned message contract.
 - [ ] Define durable job claim/lease and idempotency semantics.
+- [ ] Define the transactional outbox schema, dispatcher retry behavior, and recovery for undelivered events.
+- [ ] Verify the local Supabase-compatible Auth/API dependency; do not treat plain PostgreSQL as a complete replacement.
 - [ ] Add pinned Dockerfiles and Compose configuration under `deploy/docker/`.
 - [ ] Add health checks, non-root users, private networking, and persistent database volume.
 - [ ] Verify local migrations and a real end-to-end queued job using a controlled provider test.
