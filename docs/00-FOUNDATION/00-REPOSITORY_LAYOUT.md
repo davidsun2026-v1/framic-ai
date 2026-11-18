@@ -9,7 +9,7 @@ framic-ai/
 ├── apps/
 │   ├── web/                          # User-facing Next.js 15+ creator workspace & studio
 │   ├── api/                          # High-throughput API gateway & auth proxy
-│   └── worker-generation/            # Dedicated background GPU media rendering worker
+│   └── worker-generation/            # Planned background job orchestration worker (not yet implemented)
 │
 ├── packages/
 │   ├── types/                        # Core domain contracts, schemas, and typed interfaces
@@ -21,10 +21,9 @@ framic-ai/
 │   ├── 01-PRODUCT/                   # Product blueprint, user personas, and core workflows
 │   ├── 02-DESIGN/                    # Design system tokens, typography, and UI rules
 │   ├── 03-SPECS/                     # Detailed technical specs and data flow models
-│   ├── 04-INFRASTRUCTURE/            # Deployment topology, environment layouts, CI/CD specifications
-│   ├── 05-DATABASE/                  # Relational models, entity relationships, and access policies
-│   ├── 06-API/                       # API endpoint specifications, schemas, and contracts
-│   └── 07-UI-UX/                     # Screen hierarchies, layouts, and interaction maps
+│   ├── 04-TESTING/                   # Test strategy, critical flows, and release gates
+│   ├── 05-ADVANCED/                  # Provider abstraction, data governance, and scaling
+│   └── 06-INFRASTRUCTURE/            # Lean Docker MVP and infrastructure planning
 │
 ├── deploy/
 │   ├── docker/                       # Container configuration targets (deferred to Commit 10)
@@ -52,7 +51,7 @@ framic-ai/
 | :--- | :--- | :--- |
 | `apps/web` | Host the web application interface, studio surfaces, and client interactions. | Isolated from backend database drivers; interacts via strict API contracts. |
 | `apps/api` | Host the REST/RPC gateway, authentication validation, and token/credit orchestration. | Stateless service; communicates with workers via message broker. |
-| `apps/worker-generation` | Process GPU-bound generation tasks asynchronously (text-to-image, video synthesis). | Runs isolated from public web traffic; pull-based queue consumer. |
+| `apps/worker-generation` | Planned asynchronous job orchestration and provider coordination. | Must remain isolated from public ingress; managed providers perform inference. This workspace is not yet implemented. |
 | `packages/types` | Single source of truth for shared domain entities, status enums, and API schemas. | Zero runtime dependencies; pure TypeScript definitions. |
 | `packages/config` | Shared toolchain settings (TypeScript base configs, Biome/ESLint standards). | Enforces uniform formatting and strict typing across all workspaces. |
 | `packages/observability` | Standardized metrics naming conventions, logging contracts, and tracing definitions. | Pure contracts and abstractions for telemetry. |
@@ -64,4 +63,4 @@ framic-ai/
 
 1. **Independent Containerization**: Each service under `apps/` builds into an isolated container using pruned dependencies (`turbo prune`).
 2. **Contract Centralization**: Inter-service messages and data structures must be sourced from `packages/types`.
-3. **No Premature Implementation**: Implementation code, Dockerfile build instructions, and database DDL are strictly deferred until planning phases (Commits 1–9) are approved.
+3. **No Premature Implementation**: Dockerfiles, Compose runtime configuration, and worker code remain deferred to the implementation phase. This planning document does not claim those artifacts exist.
