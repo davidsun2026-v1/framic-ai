@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getUserBalance } from '@/lib/supabase/service';
+import { NextResponse } from 'next/server';
 
 // GET /api/balance — returns the authenticated user's real token balance.
 // Calls get_user_balance() via the service-role client since that RPC is
