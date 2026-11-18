@@ -10,16 +10,16 @@
     "indentStyle": "space",
     "indentWidth": 2,
     "lineWidth": 100,
-    "trailingComma": "es5",
-    "semicolons": "always",
-    "arrowParentheses": "always",
-    "bracketSpacing": true,
     "include": ["**/*.{js,jsx,ts,tsx,json,md}"]
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "single",
-      "jsxQuoteStyle": "double"
+      "jsxQuoteStyle": "double",
+      "trailingCommas": "es5",
+      "semicolons": "always",
+      "arrowParentheses": "always",
+      "bracketSpacing": true
     }
   },
   "linter": {
