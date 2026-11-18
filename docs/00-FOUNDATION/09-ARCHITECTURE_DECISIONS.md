@@ -1,6 +1,6 @@
 # Framic AI — Architecture Decisions: Enterprise Alignment Addendum
 
-> Addendum to `04-ARCHITECTURE_DECISIONS.md`, recorded with Commits 4–5. Where this addendum conflicts with earlier documents, **this addendum governs** until the older document is amended. Status of each decision: **Proposed** until the owner approves the pull request.
+> Addendum to `04-ARCHITECTURE_DECISIONS.md`, recorded with Commits 4–6. Where this addendum conflicts with earlier documents, **this addendum governs** until the older document is amended. Status of each decision: **Proposed** until the owner approves the pull request.
 
 ---
 
@@ -20,13 +20,15 @@
 
 **Decision.** Commit 6 plans a container-based MVP: Docker images per application and a Compose topology (web, api, worker-generation, broker, observability), Prometheus metrics and basic Grafana dashboards, and a CI pipeline building and testing images. Kubernetes manifests, GPU node pools, and autoscaling are out of MVP scope and remain deferred under `deploy/k8s/`. Managed Supabase (PostgreSQL, Auth, Storage) is the data tier.
 
-**Consequences.** Architecture diagrams in the README show the target enterprise topology; Commit 6 documents the MVP subset and the promotion path. The broker choice (Redis Streams or RabbitMQ) is made in Commit 6 against the contract in `00-GENERATION_PIPELINES.md` §4.
+**Resolved in Commit 6** (`docs/04-INFRASTRUCTURE/00-LEAN_DOCKER_MVP.md`): the broker is **Redis Streams** (single Redis container, AOF persistence); the local database is the Supabase CLI stack, with a standalone Postgres container only for CI.
+
+**Consequences.** Architecture diagrams in the README show the target enterprise topology; Commit 6 documents the MVP subset and the promotion path. The broker contract remains in `docs/03-SPECS/03-GENERATION_PIPELINES.md` §4.
 
 ---
 
 ## ADR-003 — Provider-agnostic inference backend
 
-**Decision.** Generation executes behind the `InferenceBackend` interface (`02-INFERENCE_BACKEND_INTERFACE.md`). The MVP registers one `HOSTED_API` adapter; a `GPU_POOL` adapter is added later without changing the gateway, ledger, or schema.
+**Decision.** Generation executes behind the `InferenceBackend` interface (`docs/03-SPECS/05-INFERENCE_BACKEND_INTERFACE.md`). The MVP registers one `HOSTED_API` adapter; a `GPU_POOL` adapter is added later without changing the gateway, ledger, or schema.
 
 **Supersedes.** In `01-REPLICATE_API_PIPELINE_SPEC.md`: the gateway dispatching directly to the provider and receiving provider webhooks; the "zero self-hosted GPU" invariant (now "none provisioned in the MVP"); per-model Token costs in §2 (replaced by SKU pricing, ADR-004); user-scoped wallets and `profiles`-based flow (replaced by workspace pools); job status strings in lowercase. The document remains valid as the design source for the hosted adapter's model mapping, error handling, and signature verification, and should be amended in Commit 6 or 8.
 
