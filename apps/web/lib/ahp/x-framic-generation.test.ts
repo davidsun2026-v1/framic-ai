@@ -38,7 +38,7 @@ describe('Framic AHP generation contract', () => {
       FramicGenerationRequestSchema.parse({
         ...validRequest,
         creditsReserved: 10,
-      }),
+      })
     ).toThrow();
   });
 
@@ -47,7 +47,7 @@ describe('Framic AHP generation contract', () => {
       FramicGenerationRequestSchema.parse({
         ...validRequest,
         apiKey: 'secret',
-      }),
+      })
     ).toThrow();
   });
 
