@@ -24,51 +24,47 @@
 
 ## 2. System Architecture & Modularity
 
-Framic AI employs an asynchronous event-driven microservices architecture that decouples web ingress and studio controls from heavy GPU-bound inference processing.
+Framic AI is designed around an asynchronous generation path. The web application handles authenticated requests, validation, job creation, and user-facing status. Background work is delegated to a worker that orchestrates managed inference providers; the application does not require a self-hosted GPU inference fleet.
+
+### Target generation flow
 
 ```text
-+-----------------------------------------------------------------------------------+
-|                                 FRAMIC AI CLIENT                                  |
-|   +--------------------------+  +--------------------------+  +-----------------+ |
-|   |   AI Video Studio UI     |  |   AI Image Generator UI  |  | Team Dashboard  | |
-|   +--------------------------+  +--------------------------+  +-----------------+ |
-+-----------------------------------------+-----------------------------------------+
-                                          | HTTPS / WebSockets / gRPC
-                                          v
-+-----------------------------------------------------------------------------------+
-|                            API GATEWAY & EDGE INGRESS                             |
-|  - TLS Termination & Rate Limiting                                                |
-|  - JWT Authentication & RBAC Verification                                         |
-|  - Pre-flight Token Ledger Verification & Reservation Lock                        |
-|  - Prometheus Ingress Metrics Scraper                                             |
-+-------------------+-----------------------------------+---------------------------+
-                    |                                   |
-         +----------v-----------+            +----------v-----------+
-         | Video Queue Producer |            | Image Queue Producer |
-         +----------+-----------+            +----------+-----------+
-                    |                                   |
-                    v                                   v
-+-----------------------------------------------------------------------------------+
-|                        DISTRIBUTED TASK BROKER (Redis / RabbitMQ)                 |
-|  - video.render.priority                           - image.diffusion.standard     |
-|  - video.upscale.batch                            - image.batch.queue            |
-+-------------------+-----------------------------------+---------------------------+
-                    |                                   |
-         +----------v-----------+            +----------v-----------+
-         |  GPU Video Workers   |            |  GPU Image Workers   |
-         |  (ComfyUI / TensorRT)|            |  (Diffusers / SDXL)  |
-         +----------+-----------+            +----------+-----------+
-                    |                                   |
-                    +-----------------+-----------------+
-                                      |
-                                      v
-+-----------------------------------------------------------------------------------+
-|                              PERSISTENCE & STORAGE LAYER                          |
-|  - PostgreSQL Database: Users, Teams, Workspaces, Token Ledger, Job Metadata      |
-|  - S3-Compatible Object Store: Raw Video Renders, High-Res Images, Model Weights  |
-|  - Prometheus & Grafana: Telemetry, Latency Histograms, GPU VRAM & Worker Alarms |
-+-----------------------------------------------------------------------------------+
+Browser / Studio
+      |
+      v
+Next.js App
+  |       |
+  |       +--> PostgreSQL / Supabase (authoritative jobs and credit ledger)
+  |                    |
+  |                    +--> Transactional outbox
+  |                              |
+  |                              v
+  |                         Redis queue
+  |                              |
+  |                              v
+  |                         Worker
+  |                              |
+  |                              v
+  |                    Provider adapter
+  |                              |
+  |                              v
+  |                    Managed inference API
+  |                         (e.g. Replicate)
+  |
+  +--> Read job and asset status
 ```
+
+### Runtime and accounting boundaries
+
+- **PostgreSQL/Supabase is authoritative** for user/job state, credit reservations, settlement, and compensation. The exact database contract must be verified against repository migrations and the target Supabase project before runtime implementation.
+- **Transactional outbox:** job creation and its dispatch event must be committed atomically with the reservation. A dispatcher publishes pending outbox events to Redis and marks them delivered only after a successful publish. Retries are expected; consumers must be idempotent.
+- **Redis is transport only.** It may carry job identifiers and versioned routing metadata, but it is never the source of truth for balances, reservations, or job completion.
+- **Worker is an orchestration process**, not a GPU rendering container. It reloads durable job state, enforces idempotency, calls a managed provider through the provider adapter, and records durable state transitions.
+- **ADR-002 governs every billable generation:** reserve atomically before provider submission, settle or compensate exactly once, and fail closed for unknown jobs or missing reservations.
+- **Local Docker planning:** the lean profile describes App, Database, Redis, and Worker as logical services. The Database dependency must be Supabase-compatible for full application integration. A plain PostgreSQL image alone does not provide Supabase Auth or API endpoints; use the Supabase CLI-managed local stack or a separately configured isolated Supabase project.
+- **Staging must be isolated** from production databases, queues, storage buckets, provider credentials, and webhook secrets.
+
+This is the target architecture described by the planning documents, not a claim that Dockerfiles, Compose manifests, the worker runtime, transactional outbox, or staging deployment have already been implemented. See [Lean Docker MVP Infrastructure Plan](docs/06-INFRASTRUCTURE/00-LEAN_DOCKER_MVP.md) for service boundaries, reliability requirements, and implementation gates.
 
 ---
 
