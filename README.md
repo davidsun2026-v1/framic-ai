@@ -91,12 +91,11 @@ framic-ai/
 │   ├── 01-PRODUCT/                   # Product blueprint, user personas, and core workflows
 │   ├── 02-DESIGN/                    # Design system tokens, typography, and UI rules
 │   ├── 03-SPECS/                     # Detailed technical specs and data flow models
-│   ├── 04-INFRASTRUCTURE/            # Deployment topology, environment layouts, CI/CD specifications
-│   ├── 05-DATABASE/                  # Relational models, entity relationships, and access policies
-│   ├── 06-API/                       # API endpoint specifications, schemas, and contracts
-│   └── 07-UI-UX/                     # Screen hierarchies, layouts, and interaction maps
+│   ├── 04-TESTING/                   # Test strategy, critical flows, and release gates
+│   ├── 05-ADVANCED/                  # Provider abstraction, data governance, and scaling
+│   └── 06-INFRASTRUCTURE/            # Lean Docker MVP and infrastructure planning
 ├── deploy/
-│   ├── docker/                       # Container configuration targets (deferred to Commit 10)
+│   ├── docker/                       # Docker implementation targets (deferred to Commit 10)
 │   ├── k8s/                          # Cluster orchestration manifests (deferred to Commit 10)
 │   └── monitoring/                   # Prometheus scrape & alerting rule targets (deferred to Commit 10)
 ├── supabase/
@@ -144,7 +143,7 @@ This repository is constructed following an explicit 10-step sequence:
 - [x] **Commit 3 — Product Blueprint** (`docs/01-PRODUCT/01-PRODUCT_BLUEPRINT.md` covering Functional Matrix, Personas, Workflows, State Machines, and Token Lifecycle)
 - [ ] **Commit 4 — Design System Specs** (UI tokens, typography, visual dark-room aesthetics)
 - [ ] **Commit 5 — Technical Specifications** (Video & Image generation pipelines, Token engine)
-- [ ] **Commit 6 — Infrastructure Planning** (Kubernetes, Docker, Prometheus, and CI/CD specs)
+- [ ] **Commit 6 — Infrastructure Planning** (`docs/06-INFRASTRUCTURE/00-LEAN_DOCKER_MVP.md`; Compose architecture and operational boundaries)
 - [ ] **Commit 7 — Database Planning** (Relational schemas for Users, Teams, Tokens, and Jobs)
 - [ ] **Commit 8 — API Planning** (OpenAPI contracts, WebSockets, and service endpoints)
 - [ ] **Commit 9 — UI/UX Planning** (Studio layouts, generation timeline, and token ledger dashboard)
