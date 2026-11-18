@@ -61,6 +61,9 @@ export const WorkerHeartbeatSchema = z
   .object({
     jobId: UuidSchema,
     workerId: z.string().min(1),
+    /** Known once the backend accepts the task; lets a re-leased task resume instead of resubmitting. */
+    backendId: z.string().min(1).nullable(),
+    backendJobId: z.string().min(1).nullable(),
     leaseExpiresAt: IsoTimestampSchema,
     progressPercent: z.number().min(0).max(100),
     sentAt: IsoTimestampSchema,
