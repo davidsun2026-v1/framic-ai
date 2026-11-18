@@ -10,11 +10,11 @@
 **Framic AI** is a production-grade generative media engine focused on **AI Video Synthesis** and **AI Image Creation**. Designed from the ground up for high-throughput studios, digital creators, and enterprise media pipelines, Framic AI isolates visual generation into robust, scalable services governed by strict token economics and role-based workspace governance.
 
 ### Core Focus Areas
-- **AI Video Synthesis**: Text-to-Video (T2V), Image-to-Video (I2V), Video-to-Video (V2V), frame-interpolation, camera motion conditioning, and multi-resolution upscaling (up to 4K).
-- **AI Image Creation**: High-fidelity Text-to-Image (T2I), image conditioning, inpainting, outpainting, and multi-prompt batch synthesis.
-- **Strict Token Economics**: Complete auditability of every generation request metered exclusively in **Tokens** with pre-flight balance holds, atomic debit execution, and team token pools.
-- **Multi-Tenant Collaboration**: Organization hierarchies, team workspaces, permission tiers, token budget allocations, shared visual asset libraries, and export pipelines.
-- **Enterprise Management Dashboard**: Real-time observability over active generation queues, GPU cluster saturation, team token consumption rates, and worker health.
+- **AI Video Generation**: Text-to-Video is a primary product workflow; additional video modes remain roadmap capabilities until verified in the application.
+- **AI Image Generation**: Text-to-Image is a primary product workflow; image editing and batch features remain roadmap capabilities until verified in the application.
+- **Credit Accounting**: Generation billing is governed by the ADR-002 ledger invariants: atomic reservation, exactly-once settlement, and exactly-once compensation.
+- **Creator Workspace**: User-facing generation, job status, and generated-asset management are the intended product experience; broader team collaboration requires separate implementation evidence.
+- **Operational Visibility**: Job state, queue health, provider outcomes, and credit-ledger transitions should be observable without exposing prompts or generated media in logs.
 
 ### Explicit Scope Exclusions
 - **No AI Chat or Conversational Interfaces**: Framic AI does not incorporate generic chatbot widgets, text assistants, or conversational LLM interfaces. All computing resources and UI surfaces are dedicated solely to visual asset generation and management.
@@ -77,7 +77,7 @@ framic-ai/
 ├── apps/
 │   ├── web/                          # User-facing Next.js 15+ creator workspace & studio
 │   ├── api/                          # High-throughput API gateway & auth proxy
-│   └── worker-generation/            # Dedicated background GPU media rendering worker
+│   └── worker-generation/            # Planned background provider-orchestration worker (not GPU inference)
 ├── packages/
 │   ├── types/                        # Core domain contracts, schemas, and typed interfaces
 │   ├── config/                       # Shared linter, formatter, and base configurations
