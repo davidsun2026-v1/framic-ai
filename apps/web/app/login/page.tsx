@@ -1,8 +1,8 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { signInWithPassword, signUpWithPassword } from '@/lib/auth/actions';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
 
 function LoginForm() {
   const router = useRouter();
@@ -113,7 +113,9 @@ function LoginForm() {
           }}
           className="w-full text-center text-sm text-neutral-400 hover:text-white"
         >
-          {mode === 'signin' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+          {mode === 'signin'
+            ? "Don't have an account? Sign up"
+            : 'Already have an account? Sign in'}
         </button>
       </div>
     </div>

@@ -10,11 +10,11 @@
 **Framic AI** is a production-grade generative media engine focused on **AI Video Synthesis** and **AI Image Creation**. Designed from the ground up for high-throughput studios, digital creators, and enterprise media pipelines, Framic AI isolates visual generation into robust, scalable services governed by strict token economics and role-based workspace governance.
 
 ### Core Focus Areas
-- **AI Video Synthesis**: Text-to-Video (T2V), Image-to-Video (I2V), Video-to-Video (V2V), frame-interpolation, camera motion conditioning, and multi-resolution upscaling (up to 4K).
-- **AI Image Creation**: High-fidelity Text-to-Image (T2I), image conditioning, inpainting, outpainting, and multi-prompt batch synthesis.
-- **Strict Token Economics**: Complete auditability of every generation request metered exclusively in **Tokens** with pre-flight balance holds, atomic debit execution, and team token pools.
-- **Multi-Tenant Collaboration**: Organization hierarchies, team workspaces, permission tiers, token budget allocations, shared visual asset libraries, and export pipelines.
-- **Enterprise Management Dashboard**: Real-time observability over active generation queues, GPU cluster saturation, team token consumption rates, and worker health.
+- **AI Video Generation**: Text-to-Video is a primary product workflow; additional video modes remain roadmap capabilities until verified in the application.
+- **AI Image Generation**: Text-to-Image is a primary product workflow; image editing and batch features remain roadmap capabilities until verified in the application.
+- **Credit Accounting**: Generation billing is governed by the ADR-002 ledger invariants: atomic reservation, exactly-once settlement, and exactly-once compensation.
+- **Creator Workspace**: User-facing generation, job status, and generated-asset management are the intended product experience; broader team collaboration requires separate implementation evidence.
+- **Operational Visibility**: Job state, queue health, provider outcomes, and credit-ledger transitions should be observable without exposing prompts or generated media in logs.
 
 ### Explicit Scope Exclusions
 - **No AI Chat or Conversational Interfaces**: Framic AI does not incorporate generic chatbot widgets, text assistants, or conversational LLM interfaces. All computing resources and UI surfaces are dedicated solely to visual asset generation and management.
@@ -24,51 +24,47 @@
 
 ## 2. System Architecture & Modularity
 
-Framic AI employs an asynchronous event-driven microservices architecture that decouples web ingress and studio controls from heavy GPU-bound inference processing.
+Framic AI is designed around an asynchronous generation path. The web application handles authenticated requests, validation, job creation, and user-facing status. Background work is delegated to a worker that orchestrates managed inference providers; the application does not require a self-hosted GPU inference fleet.
+
+### Target generation flow
 
 ```text
-+-----------------------------------------------------------------------------------+
-|                                 FRAMIC AI CLIENT                                  |
-|   +--------------------------+  +--------------------------+  +-----------------+ |
-|   |   AI Video Studio UI     |  |   AI Image Generator UI  |  | Team Dashboard  | |
-|   +--------------------------+  +--------------------------+  +-----------------+ |
-+-----------------------------------------+-----------------------------------------+
-                                          | HTTPS / WebSockets / gRPC
-                                          v
-+-----------------------------------------------------------------------------------+
-|                            API GATEWAY & EDGE INGRESS                             |
-|  - TLS Termination & Rate Limiting                                                |
-|  - JWT Authentication & RBAC Verification                                         |
-|  - Pre-flight Token Ledger Verification & Reservation Lock                        |
-|  - Prometheus Ingress Metrics Scraper                                             |
-+-------------------+-----------------------------------+---------------------------+
-                    |                                   |
-         +----------v-----------+            +----------v-----------+
-         | Video Queue Producer |            | Image Queue Producer |
-         +----------+-----------+            +----------+-----------+
-                    |                                   |
-                    v                                   v
-+-----------------------------------------------------------------------------------+
-|                        DISTRIBUTED TASK BROKER (Redis / RabbitMQ)                 |
-|  - video.render.priority                           - image.diffusion.standard     |
-|  - video.upscale.batch                            - image.batch.queue            |
-+-------------------+-----------------------------------+---------------------------+
-                    |                                   |
-         +----------v-----------+            +----------v-----------+
-         |  GPU Video Workers   |            |  GPU Image Workers   |
-         |  (ComfyUI / TensorRT)|            |  (Diffusers / SDXL)  |
-         +----------+-----------+            +----------+-----------+
-                    |                                   |
-                    +-----------------+-----------------+
-                                      |
-                                      v
-+-----------------------------------------------------------------------------------+
-|                              PERSISTENCE & STORAGE LAYER                          |
-|  - PostgreSQL Database: Users, Teams, Workspaces, Token Ledger, Job Metadata      |
-|  - S3-Compatible Object Store: Raw Video Renders, High-Res Images, Model Weights  |
-|  - Prometheus & Grafana: Telemetry, Latency Histograms, GPU VRAM & Worker Alarms |
-+-----------------------------------------------------------------------------------+
+Browser / Studio
+      |
+      v
+Next.js App
+  |       |
+  |       +--> PostgreSQL / Supabase (authoritative jobs and credit ledger)
+  |                    |
+  |                    +--> Transactional outbox
+  |                              |
+  |                              v
+  |                         Redis queue
+  |                              |
+  |                              v
+  |                         Worker
+  |                              |
+  |                              v
+  |                    Provider adapter
+  |                              |
+  |                              v
+  |                    Managed inference API
+  |                         (e.g. Replicate)
+  |
+  +--> Read job and asset status
 ```
+
+### Runtime and accounting boundaries
+
+- **PostgreSQL/Supabase is authoritative** for user/job state, credit reservations, settlement, and compensation. The exact database contract must be verified against repository migrations and the target Supabase project before runtime implementation.
+- **Transactional outbox:** job creation and its dispatch event must be committed atomically with the reservation. A dispatcher publishes pending outbox events to Redis and marks them delivered only after a successful publish. Retries are expected; consumers must be idempotent.
+- **Redis is transport only.** It may carry job identifiers and versioned routing metadata, but it is never the source of truth for balances, reservations, or job completion.
+- **Worker is an orchestration process**, not a GPU rendering container. It reloads durable job state, enforces idempotency, calls a managed provider through the provider adapter, and records durable state transitions.
+- **ADR-002 governs every billable generation:** reserve atomically before provider submission, settle or compensate exactly once, and fail closed for unknown jobs or missing reservations.
+- **Local Docker planning:** the lean profile describes App, Database, Redis, and Worker as logical services. The Database dependency must be Supabase-compatible for full application integration. A plain PostgreSQL image alone does not provide Supabase Auth or API endpoints; use the Supabase CLI-managed local stack or a separately configured isolated Supabase project.
+- **Staging must be isolated** from production databases, queues, storage buckets, provider credentials, and webhook secrets.
+
+This is the target architecture described by the planning documents, not a claim that Dockerfiles, Compose manifests, the worker runtime, transactional outbox, or staging deployment have already been implemented. See [Lean Docker MVP Infrastructure Plan](docs/06-INFRASTRUCTURE/00-LEAN_DOCKER_MVP.md) for service boundaries, reliability requirements, and implementation gates.
 
 ---
 
@@ -81,7 +77,7 @@ framic-ai/
 ├── apps/
 │   ├── web/                          # User-facing Next.js 15+ creator workspace & studio
 │   ├── api/                          # High-throughput API gateway & auth proxy
-│   └── worker-generation/            # Dedicated background GPU media rendering worker
+│   └── worker-generation/            # Planned background provider-orchestration worker (not GPU inference)
 ├── packages/
 │   ├── types/                        # Core domain contracts, schemas, and typed interfaces
 │   ├── config/                       # Shared linter, formatter, and base configurations
@@ -91,12 +87,11 @@ framic-ai/
 │   ├── 01-PRODUCT/                   # Product blueprint, user personas, and core workflows
 │   ├── 02-DESIGN/                    # Design system tokens, typography, and UI rules
 │   ├── 03-SPECS/                     # Detailed technical specs and data flow models
-│   ├── 04-INFRASTRUCTURE/            # Deployment topology, environment layouts, CI/CD specifications
-│   ├── 05-DATABASE/                  # Relational models, entity relationships, and access policies
-│   ├── 06-API/                       # API endpoint specifications, schemas, and contracts
-│   └── 07-UI-UX/                     # Screen hierarchies, layouts, and interaction maps
+│   ├── 04-TESTING/                   # Test strategy, critical flows, and release gates
+│   ├── 05-ADVANCED/                  # Provider abstraction, data governance, and scaling
+│   └── 06-INFRASTRUCTURE/            # Lean Docker MVP and infrastructure planning
 ├── deploy/
-│   ├── docker/                       # Container configuration targets (deferred to Commit 10)
+│   ├── docker/                       # Docker implementation targets (deferred to Commit 10)
 │   ├── k8s/                          # Cluster orchestration manifests (deferred to Commit 10)
 │   └── monitoring/                   # Prometheus scrape & alerting rule targets (deferred to Commit 10)
 ├── supabase/
@@ -131,7 +126,7 @@ In Framic AI, computational workloads are strictly metered and billed in **Token
 ### Atomic Token Reservation Workflow
 1. **Pre-flight Lock**: When a generation request is submitted, the API Gateway checks the workspace token balance. If sufficient, the estimated token cost is placed into a `RESERVED` status within an atomic database transaction.
 2. **Inference Execution**: The task is dispatched to the worker queue. If the job completes successfully, the reserved tokens are committed to `DEBITED` status in the ledger.
-3. **Fault-Tolerant Rollback**: If an inference worker crashes, encounters an unrecoverable CUDA out-of-memory (OOM) error, or times out, the reservation lock is immediately released and zero tokens are deducted from the workspace balance.
+3. **Retry and Terminal Compensation**: A worker crash, timeout, lost queue message, or expired worker claim does not immediately release the reservation. The durable job remains eligible for controlled retry/reconciliation under the configured lease and retry policy. Only after the job reaches an approved terminal failure or cancellation state is the existing reservation released/compensated exactly once; successful work settles it exactly once. Queue retries and worker restarts must not create a second debit or refund.
 
 ---
 
@@ -144,7 +139,7 @@ This repository is constructed following an explicit 10-step sequence:
 - [x] **Commit 3 — Product Blueprint** (`docs/01-PRODUCT/01-PRODUCT_BLUEPRINT.md` covering Functional Matrix, Personas, Workflows, State Machines, and Token Lifecycle)
 - [ ] **Commit 4 — Design System Specs** (UI tokens, typography, visual dark-room aesthetics)
 - [ ] **Commit 5 — Technical Specifications** (Video & Image generation pipelines, Token engine)
-- [ ] **Commit 6 — Infrastructure Planning** (Kubernetes, Docker, Prometheus, and CI/CD specs)
+- [ ] **Commit 6 — Infrastructure Planning** (`docs/06-INFRASTRUCTURE/00-LEAN_DOCKER_MVP.md`; Compose architecture and operational boundaries)
 - [ ] **Commit 7 — Database Planning** (Relational schemas for Users, Teams, Tokens, and Jobs)
 - [ ] **Commit 8 — API Planning** (OpenAPI contracts, WebSockets, and service endpoints)
 - [ ] **Commit 9 — UI/UX Planning** (Studio layouts, generation timeline, and token ledger dashboard)

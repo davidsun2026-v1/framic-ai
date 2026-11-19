@@ -1,7 +1,9 @@
-import { redirect } from 'next/navigation';
+import { signOut } from '@/lib/auth/actions';
 import { createClient } from '@/lib/supabase/server';
 import { getUserBalance } from '@/lib/supabase/service';
-import { signOut } from '@/lib/auth/actions';
+import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 
 // Column names below (full_name, asset_type, storage_url) are verified
 // against the real production schema via direct database introspection —
@@ -29,8 +31,10 @@ export default async function DashboardPage() {
     getUserBalance(user.id),
   ]);
 
-  const profileError = profileResult.status === 'fulfilled' ? profileResult.value.error : profileResult.reason;
-  const assetsError = assetsResult.status === 'fulfilled' ? assetsResult.value.error : assetsResult.reason;
+  const profileError =
+    profileResult.status === 'fulfilled' ? profileResult.value.error : profileResult.reason;
+  const assetsError =
+    assetsResult.status === 'fulfilled' ? assetsResult.value.error : assetsResult.reason;
   const balanceError = balanceResult.status === 'rejected' ? balanceResult.reason : null;
 
   const loadError = profileError || assetsError || balanceError;
