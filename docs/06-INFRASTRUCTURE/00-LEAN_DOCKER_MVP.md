@@ -186,8 +186,10 @@ Rules:
 | Condition | Required behavior |
 |---|---|
 | PostgreSQL unavailable | App/Worker readiness fails; no billable work is accepted |
-| Redis unavailable | App does not acknowledge queue-backed work as successfully enqueued |
-| Worker stops mid-job | Durable job remains recoverable; lease/claim expiry permits controlled retry |
+| Redis unavailable | App does not acknowledge queue-backed work as successfully enqueued; pending outbox events remain durable for dispatcher retry |
+| Redis loses a published message before worker claim | Durable-job reconciliation detects queued jobs with no active claim after the configured claim window and republishes the same job identifier; Redis persistence is defense in depth, not the only recovery mechanism |
+| Worker stops mid-job | Durable job remains recoverable; claim/lease expiry permits controlled retry without releasing the reservation |
+| Worker retry budget is exhausted | Mark the job terminal only after reconciliation/retry policy is exhausted, then invoke the approved compensation path exactly once |
 | Duplicate queue message | Worker reloads durable state and exits safely if already claimed/completed |
 | Provider timeout or transient error | Bounded retry with backoff and idempotency protection |
 | Terminal provider failure | Persist failure and invoke the approved compensation path once |
@@ -199,6 +201,10 @@ Queue acknowledgement must occur only after the worker has safely persisted the 
 ### 8.1 Database-to-queue publish gap
 
 The App must not rely on a best-effort Redis publish performed after committing the job and reservation. That creates a crash window in which a valid reservation exists but no queue message is delivered. The job, reservation, and outbox event must be written atomically in one PostgreSQL transaction. A dispatcher reads undelivered outbox rows, publishes the job identifier to Redis, and marks the event delivered only after successful publication. If it crashes before marking delivery, it republishes; duplicate delivery is safe because the worker reloads durable state and enforces idempotency. Outbox age and retry exhaustion must be observable and recoverable. A database-polling dispatcher is an acceptable implementation alternative only if it provides equivalent durable retry and idempotency guarantees.
+
+### 8.2 Published-message loss and unclaimed-job reconciliation
+
+A successful Redis publish does not prove that a worker has claimed or started the job. The dispatcher may mark an outbox event delivered after Redis accepts the message, but the durable generation job remains the authority. A separate reconciliation loop must scan for jobs that remain eligible/queued without an active worker claim beyond a configured claim window and republish the same job identifier. The re-publication path must be idempotent and must not create a new reservation or provider submission. Workers must claim jobs through an atomic durable-state transition and maintain a bounded lease/heartbeat; an expired claim makes the existing job eligible for controlled retry. Redis AOF/RDB persistence may reduce message loss, but it is optional defense in depth and does not replace database-backed reconciliation. Do not release a reservation merely because a queue message was lost or a worker lease expired; release/compensation occurs exactly once only after the job reaches the approved terminal-failure or cancellation state.
 
 ## 9. Observability and operations
 
