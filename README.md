@@ -126,7 +126,7 @@ In Framic AI, computational workloads are strictly metered and billed in **Token
 ### Atomic Token Reservation Workflow
 1. **Pre-flight Lock**: When a generation request is submitted, the API Gateway checks the workspace token balance. If sufficient, the estimated token cost is placed into a `RESERVED` status within an atomic database transaction.
 2. **Inference Execution**: The task is dispatched to the worker queue. If the job completes successfully, the reserved tokens are committed to `DEBITED` status in the ledger.
-3. **Fault-Tolerant Rollback**: If an inference worker crashes, encounters an unrecoverable CUDA out-of-memory (OOM) error, or times out, the reservation lock is immediately released and zero tokens are deducted from the workspace balance.
+3. **Retry and Terminal Compensation**: A worker crash, timeout, lost queue message, or expired worker claim does not immediately release the reservation. The durable job remains eligible for controlled retry/reconciliation under the configured lease and retry policy. Only after the job reaches an approved terminal failure or cancellation state is the existing reservation released/compensated exactly once; successful work settles it exactly once. Queue retries and worker restarts must not create a second debit or refund.
 
 ---
 
