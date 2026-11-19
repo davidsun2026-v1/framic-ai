@@ -1,69 +1,68 @@
 # Implementation Status
 
 ## Purpose
-Single evidence-based ledger separating what exists from what is designed, implemented, and runtime-verified.
+Single evidence-based ledger separating repository artifacts, live infrastructure contracts, implemented code, and runtime verification.
 
-**Verified baseline (2026-09-16):** the repository contains a substantial foundation and an initial Supabase schema migration. The current application code also references a newer production-style token/RPC contract. Those contracts are not fully represented by the repository migration chain. The authoritative FRAMIC AI production Supabase project is not currently identifiable through the connected Supabase account, so no production-schema claim is made here without direct target-project evidence.
+**Evidence refresh:** 2026-11-19  
+**Repository:** `davidsun2026-v1/framic-ai`  
+**Documentation branch:** `docs/replicate-only-billing-contract`  
+**Supabase target inspected read-only:** Framic AI, project ref `gkvvecskbkwpcsuatklm`, region `eu-west-1`.
 
-See `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md` for the detailed reconciliation and exit criteria.
+## Capability status
 
-| Capability | Status | Evidence rule |
+| Capability | Status | Evidence |
 |---|---|---|
-| Product foundation | VERIFIED | Charter/specification and foundation documents exist |
-| Monorepo config | PARTIAL | Root configuration and initial workspace structure exist |
-| Web app | PARTIAL | `apps/web` exists with Next.js configuration, auth callback/actions, Supabase clients, middleware, and application routes |
-| API | PARTIAL | App Router API route exists (`/api/balance`); dedicated `apps/api` does not exist |
-| Shared packages | PARTIAL | `packages/types` exists; other planned shared packages are not fully implemented |
-| Supabase schema/migrations | PARTIAL / DRIFT | `supabase/migrations/20260910000000_init_schema.sql` defines the initial wallet/credit schema, while current application/status evidence references a token-ledger/RPC contract not represented by that migration |
-| Authentication | PARTIAL | Auth actions use real Supabase Auth methods. Signup references an `on_auth_user_created` trigger migration that is absent from the repository migration directory |
-| Profiles | PARTIAL | Initial repository schema defines `public.profiles`; exact target production columns are not verified for the FRAMIC target project |
-| Credits | BROKEN / NOT VERIFIED | App balance path calls `get_user_balance`; the repository migration does not define that RPC or `view_user_balances`. Token-ledger/reservation production claims require direct target-project verification |
-| Subscriptions | PARTIAL | Initial subscription schema exists; executable provider renewal flow is not verified for the FRAMIC target project |
-| Paystack | NOT VERIFIED | Payment schema exists, but no complete app-side checkout/webhook fulfillment flow is proven |
-| Replicate | NOT VERIFIED | Provider integration is not proven in the current repository |
-| Asset library | PARTIAL | `generated_assets` schema exists; exact target production contract is not verified |
-| Generation | NOT VERIFIED | `generation_jobs` schema exists, but executable provider submission and token settlement flow is not proven |
+| Product foundation | VERIFIED | Charter, technical specifications, and foundation documents exist |
+| Monorepo config | PARTIAL | Root configuration and workspace structure exist |
+| Web application | PARTIAL | `apps/web` contains Next.js configuration, auth, Supabase clients, and application routes |
+| API | PARTIAL | Balance API exists; generation submission API not verified |
+| Supabase live project identity | VERIFIED | Connected project ref is `gkvvecskbkwpcsuatklm` |
+| Supabase core tables | VERIFIED | Live inventory includes profiles, credit_wallets, credit_transactions, subscriptions, payments, generation_jobs, generated_assets, webhook_events |
+| Live credit reservation primitives | VERIFIED | Live `reserve_credits`, `settle_credits`, and `release_credits` definitions/signatures inspected |
+| Credit reservation wired to generation | NOT VERIFIED | No executable generation submission path invoking these RPCs was found |
+| Authentication | PARTIAL | Repository auth actions use Supabase Auth; full staging/runtime acceptance not established here |
+| Profiles | PARTIAL | Live table exists; full application query contract and user-flow behavior not verified in this task |
+| Subscriptions | PARTIAL | Live table and migration exist; recurring customer lifecycle not verified |
+| Paystack | PARTIAL | Live `paystack-webhook` Edge Function exists; checkout-to-subscription/credit fulfillment not end-to-end tested here |
+| Replicate credentials/provider setup | NOT VERIFIED | Repository contains an environment variable name; live secret configuration was not inspected |
+| Replicate generation route | NOT VERIFIED | No executable submission route found in inspected repository paths/search |
+| Replicate webhook route | NOT VERIFIED | No deployed Replicate generation/webhook Edge Function in live function inventory; app webhook route not verified |
+| Replicate model registry | NOT VERIFIED | No approved production model/version, schema, or cost registry verified |
+| Generation runtime | NOT VERIFIED | Live generation_jobs table exists; no end-to-end prediction evidence |
+| Asset persistence | PARTIAL | Live generated_assets table and storage migration exist; generated-output delivery path not verified |
 | Monitoring | PLANNED | Requirements/documentation only |
-| Tests | NOT VERIFIED | Test configuration exists, but required test execution evidence is pending |
-| CI/CD | PARTIAL | CodeQL workflow exists and has prior passing evidence; application build/type-check verification remains a release gate |
-| Deployment | NOT VERIFIED | Repository evidence alone does not prove a live production deployment |
+| CI/CD | PARTIAL | Workflow configuration exists; current run status not evaluated in this task |
+| Deployment | NOT VERIFIED | No production generation deployment evidence established |
 
-## Supabase contract findings
+## Verified live credit RPC contracts
 
-### Verified in repository
+| Function | Signature | Observed behavior |
+|---|---|---|
+| `reserve_credits` | `(p_user_id uuid, p_amount bigint, p_reason text, p_idempotency_key text, p_correlation_id uuid, p_metadata jsonb)` | Wallet row lock, sufficient-balance check, pending negative deduction, idempotency |
+| `settle_credits` | `(p_transaction_id uuid)` | Pending deduction becomes completed; repeat settlement returns false |
+| `release_credits` | `(p_transaction_id uuid, p_release_idempotency_key text)` | Pending reservation is restored and refund recorded; idempotency enforced |
+| `grant_credits` | Eight arguments; see live introspection | Payment/admin credit grant primitive; not generation settlement |
 
-- `supabase/migrations/20260910000000_init_schema.sql` exists.
-- The migration defines `profiles`, `credit_wallets`, `credit_transactions`, `subscriptions`, `payments`, `generated_assets`, `generation_jobs`, and `webhook_events`.
-- RLS policies and core constraints are defined for those tables.
-- `apps/web/lib/supabase/client.ts`, `server.ts`, and `service.ts` exist.
-- `apps/web/lib/auth/actions.ts` calls real Supabase Auth methods.
+The three generation-relevant functions are SECURITY DEFINER, set an empty search_path, and had EXECUTE granted to service_role and postgres owner when inspected. These are database primitives; application integration is NOT VERIFIED.
 
-### Broken repository contracts
+## Repository and documentation findings
 
-1. `apps/web/lib/auth/actions.ts` references `20260915000000_add_user_signup_trigger.sql`, but that migration is not present in `supabase/migrations/`.
-2. `apps/web/lib/supabase/service.ts` calls `get_user_balance(p_user_id)` and documents `view_user_balances`, but neither is defined by the repository's only migration.
-3. Repository documentation references `token_ledgers`, `token_reservations`, and token-generation RPCs, but the migration chain does not define those objects.
+- The previous `SPEC-001-REPLICATE-API-PIPELINE.md` described OpenRouter prompt expansion, several unverified models, and invented generation RPC signatures. This conflicted with Replicate-only V1 and the live Supabase signatures.
+- The previous Replicate module lacked a sole-provider boundary and webhook/model verification requirements.
+- `docs/00-FOUNDATION/07-SUPABASE-CONTRACT-AUDIT.md` contains older project-access findings. Do not treat its 2026-09-16 connection statement as current evidence for the connected project inspected on 2026-11-19.
+- Six live migrations were reported applied, including credit reservations, Paystack fulfillment, storage buckets, and profile/asset column restrictions.
+- The live Edge Function inventory contained `hello-world`, `smooth-worker`, and `paystack-webhook`; no Replicate generation or webhook function appeared.
+- Row counts for the eight inspected core tables were zero at inspection time. This is a point-in-time observation, not a permanent invariant.
 
-### Production verification boundary
+## Release decision
 
-The connected Supabase account currently exposes the STRIKE GEN AI project. It does not provide an identifiable FRAMIC AI production project in the available project list. Therefore FRAMIC production schema, RPCs, triggers, RLS, and deployed migrations remain **NOT VERIFIED** from the current connection.
+**NO-GO for production generation billing.**
 
-No speculative production migration has been created.
+Credit primitives exist, but Replicate execution, webhook verification, model allowlist, durable output delivery, end-to-end settlement, and acceptance tests are not verified.
 
-## Manual Verification Pending
-
-The following remain release gates:
-
-- [ ] Identify the authoritative FRAMIC AI Supabase project/ref.
-- [ ] Introspect live tables, columns, constraints, indexes, RLS policies, functions, views, and auth triggers.
-- [ ] Reconcile the live contract with repository migrations.
-- [ ] Verify `get_user_balance()` and all token reservation/settlement RPC signatures.
-- [ ] Verify signup creates the required application profile/wallet state.
-- [ ] Run `npm run dev` against valid development credentials.
-- [ ] Run type-check, lint, tests, and production build successfully.
-- [ ] Perform a real authentication smoke test.
-- [ ] Perform a real balance-read smoke test.
-
-## Rule
-
-Documentation is never implementation evidence. A capability becomes VERIFIED only when the required repository artifacts and/or live system behavior have been directly evidenced. When repository and production contracts disagree, the actual target production system must be inspected before modifying the migration chain.
+## Rules
+1. Documentation is not implementation evidence.
+2. Do not invent model IDs, prices, RPC signatures, routes, environment values, or runtime behavior.
+3. Do not modify production Supabase without separate explicit authorization.
+4. Do not mark generation or billing VERIFIED until staging proves the complete lifecycle.
+5. Provider costs and customer credits are separate accounting domains.
