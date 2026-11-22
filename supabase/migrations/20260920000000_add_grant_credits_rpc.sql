@@ -1,49 +1,33 @@
--- Framic AI — Atomic Credit Grant RPC
--- Created: 2026-09-20
--- Purpose: Implement grant_credits(user_id, amount, reason, idempotency_key) RPC
+-- Framic AI — Live-compatible atomic credit grant RPC
+-- Reconciled against public.grant_credits on Framic Supabase project
+-- gkvvecskbkwpcsuatklm on 2026-10-22.
 --
--- This RPC provides atomically-safe credit grant operations with idempotency
--- guarantees. It is the authoritative server-side operation for granting credits
--- to user wallets (e.g., after successful Paystack payment verification).
+-- The live RPC has eight input parameters and returns:
+-- (transaction_id uuid, new_balance bigint, duplicate boolean).
+-- Defaults are preserved for the final four arguments so trusted server
+-- callers may supply explicit values or use the established defaults.
 --
--- Idempotency Behavior:
---   Same idempotency_key + same parameters (user, amount, reason)
---   → Returns already_processed; no mutation
---
---   Same idempotency_key + different parameters
---   → Returns conflict; no mutation
---
--- Atomicity Guarantee:
---   If wallet update succeeds but ledger insert fails, the entire transaction
---   rolls back automatically (PostgreSQL transaction semantics).
---   There is never a state where balance is updated without a ledger entry.
---
--- Concurrency Safety:
---   Wallet row is locked (SELECT ... FOR UPDATE) to prevent concurrent mutations.
---   Idempotency is checked twice: before lock (fast path) and after lock
---   (to catch race conditions).
---
--- Security:
---   - SECURITY DEFINER: runs with owner permissions
---   - search_path = public: prevents SQL injection via schema references
---   - Only service_role can execute
---   - All table references are explicitly schema-qualified
+-- This migration is repository-only until separately reviewed and applied.
+-- It does not mutate the live Supabase database.
 
--- ============================================================================
--- grant_credits() — Atomic credit grant operation
--- ============================================================================
+-- Remove the obsolete four-argument overload defined by the earlier
+-- repository contract. No repository callers for that overload were found.
+DROP FUNCTION IF EXISTS public.grant_credits(UUID, BIGINT, TEXT, TEXT);
 
 CREATE OR REPLACE FUNCTION public.grant_credits(
   p_user_id UUID,
   p_amount BIGINT,
   p_reason TEXT,
-  p_idempotency_key TEXT
+  p_idempotency_key TEXT,
+  p_type TEXT DEFAULT 'grant',
+  p_correlation_id UUID DEFAULT NULL,
+  p_metadata JSONB DEFAULT '{}'::JSONB,
+  p_created_by TEXT DEFAULT 'payment_webhook'
 )
 RETURNS TABLE (
-  status TEXT,
   transaction_id UUID,
   new_balance BIGINT,
-  error_message TEXT
+  duplicate BOOLEAN
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -58,166 +42,123 @@ DECLARE
   v_existing_user_id UUID;
   v_existing_amount BIGINT;
   v_existing_reason TEXT;
-  v_existing_balance_after BIGINT;
+  v_existing_type TEXT;
+  v_existing_correlation_id UUID;
+  v_existing_metadata JSONB;
+  v_existing_created_by TEXT;
 BEGIN
-  -- STEP 1: Validate input parameters
-  
-  IF p_amount IS NULL OR p_amount <= 0 THEN
-    RETURN QUERY SELECT 'invalid_request'::TEXT, NULL::UUID, NULL::BIGINT, 'Amount must be positive'::TEXT;
-    RETURN;
+  IF p_user_id IS NULL THEN
+    RAISE EXCEPTION 'p_user_id is required';
   END IF;
-  
-  IF p_reason IS NULL OR TRIM(p_reason) = '' THEN
-    RETURN QUERY SELECT 'invalid_request'::TEXT, NULL::UUID, NULL::BIGINT, 'Reason cannot be empty'::TEXT;
-    RETURN;
+  IF p_amount IS NULL OR p_amount = 0 THEN
+    RAISE EXCEPTION 'p_amount must not be zero';
   END IF;
-  
-  IF p_idempotency_key IS NULL OR TRIM(p_idempotency_key) = '' THEN
-    RETURN QUERY SELECT 'invalid_request'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key required'::TEXT;
-    RETURN;
+  IF p_reason IS NULL OR btrim(p_reason) = '' THEN
+    RAISE EXCEPTION 'p_reason is required';
+  END IF;
+  IF p_idempotency_key IS NULL OR btrim(p_idempotency_key) = '' THEN
+    RAISE EXCEPTION 'p_idempotency_key is required';
+  END IF;
+  IF p_type IS NULL OR btrim(p_type) = '' THEN
+    RAISE EXCEPTION 'p_type is required';
+  END IF;
+  IF p_created_by IS NULL OR btrim(p_created_by) = '' THEN
+    RAISE EXCEPTION 'p_created_by is required';
   END IF;
 
-  -- STEP 2: First idempotency check (before lock acquisition)
-  
-  SELECT id, user_id, amount, reason, balance_after
+  -- Fast idempotency path. A reused key must represent the same operation.
+  SELECT id, user_id, amount, reason, type, correlation_id, metadata, created_by
+    INTO v_existing_id, v_existing_user_id, v_existing_amount, v_existing_reason,
+         v_existing_type, v_existing_correlation_id, v_existing_metadata, v_existing_created_by
   FROM public.credit_transactions
-  WHERE idempotency_key = p_idempotency_key
-  INTO v_existing_id, v_existing_user_id, v_existing_amount, v_existing_reason, v_existing_balance_after;
-  
+  WHERE idempotency_key = p_idempotency_key;
+
   IF v_existing_id IS NOT NULL THEN
-    -- Found existing transaction; validate compatibility
-    
-    IF v_existing_user_id != p_user_id THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key conflict: target user mismatch'::TEXT;
-      RETURN;
+    IF v_existing_user_id IS DISTINCT FROM p_user_id
+       OR v_existing_amount IS DISTINCT FROM p_amount
+       OR v_existing_reason IS DISTINCT FROM p_reason
+       OR v_existing_type IS DISTINCT FROM p_type
+       OR v_existing_correlation_id IS DISTINCT FROM p_correlation_id
+       OR COALESCE(v_existing_metadata, '{}'::JSONB) IS DISTINCT FROM COALESCE(p_metadata, '{}'::JSONB)
+       OR COALESCE(v_existing_created_by, 'payment_webhook') IS DISTINCT FROM p_created_by THEN
+      RAISE EXCEPTION 'Idempotency key conflict for grant_credits';
     END IF;
-    
-    IF v_existing_amount != p_amount THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 
-        ('Idempotency key conflict: amount mismatch (existing: ' || v_existing_amount || ', requested: ' || p_amount || ')')::TEXT;
-      RETURN;
-    END IF;
-    
-    IF v_existing_reason != p_reason THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key conflict: reason mismatch'::TEXT;
-      RETURN;
-    END IF;
-    
-    -- All parameters match; idempotent retry of already-successful operation
-    RETURN QUERY SELECT 'already_processed'::TEXT, v_existing_id, v_existing_balance_after, NULL::TEXT;
+
+    RETURN QUERY
+      SELECT v_existing_id, cw.balance, TRUE
+      FROM public.credit_wallets cw
+      WHERE cw.user_id = p_user_id;
     RETURN;
   END IF;
 
-  -- STEP 3: Lock wallet row (exclusive row-level lock)
-  
+  -- Serialize mutations for this user's wallet.
   SELECT id, balance
+    INTO v_wallet_id, v_balance_before
   FROM public.credit_wallets
   WHERE user_id = p_user_id
-  FOR UPDATE
-  INTO v_wallet_id, v_balance_before;
+  FOR UPDATE;
 
-  -- STEP 4: Verify wallet exists
-  
   IF v_wallet_id IS NULL THEN
-    RETURN QUERY SELECT 'wallet_not_found'::TEXT, NULL::UUID, NULL::BIGINT, 'User wallet not found'::TEXT;
-    RETURN;
+    INSERT INTO public.credit_wallets (user_id, balance)
+    VALUES (p_user_id, 0)
+    RETURNING id, balance INTO v_wallet_id, v_balance_before;
   END IF;
 
-  -- STEP 5: Re-check idempotency after acquiring wallet lock
-  -- (Race condition defense: another request may have completed this operation
-  --  while we were waiting for the lock)
-  
-  SELECT id, user_id, amount, reason, balance_after
+  -- Re-check idempotency after taking the wallet lock.
+  SELECT id, user_id, amount, reason, type, correlation_id, metadata, created_by
+    INTO v_existing_id, v_existing_user_id, v_existing_amount, v_existing_reason,
+         v_existing_type, v_existing_correlation_id, v_existing_metadata, v_existing_created_by
   FROM public.credit_transactions
-  WHERE idempotency_key = p_idempotency_key
-  INTO v_existing_id, v_existing_user_id, v_existing_amount, v_existing_reason, v_existing_balance_after;
-  
+  WHERE idempotency_key = p_idempotency_key;
+
   IF v_existing_id IS NOT NULL THEN
-    -- Found existing transaction; re-validate compatibility
-    
-    IF v_existing_user_id != p_user_id THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key conflict: target user mismatch'::TEXT;
-      RETURN;
+    IF v_existing_user_id IS DISTINCT FROM p_user_id
+       OR v_existing_amount IS DISTINCT FROM p_amount
+       OR v_existing_reason IS DISTINCT FROM p_reason
+       OR v_existing_type IS DISTINCT FROM p_type
+       OR v_existing_correlation_id IS DISTINCT FROM p_correlation_id
+       OR COALESCE(v_existing_metadata, '{}'::JSONB) IS DISTINCT FROM COALESCE(p_metadata, '{}'::JSONB)
+       OR COALESCE(v_existing_created_by, 'payment_webhook') IS DISTINCT FROM p_created_by THEN
+      RAISE EXCEPTION 'Idempotency key conflict for grant_credits';
     END IF;
-    
-    IF v_existing_amount != p_amount THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key conflict: amount mismatch'::TEXT;
-      RETURN;
-    END IF;
-    
-    IF v_existing_reason != p_reason THEN
-      RETURN QUERY SELECT 'conflict'::TEXT, NULL::UUID, NULL::BIGINT, 'Idempotency key conflict: reason mismatch'::TEXT;
-      RETURN;
-    END IF;
-    
-    -- All parameters match; another request succeeded while we were waiting
-    RETURN QUERY SELECT 'already_processed'::TEXT, v_existing_id, v_existing_balance_after, NULL::TEXT;
+
+    RETURN QUERY
+      SELECT v_existing_id, cw.balance, TRUE
+      FROM public.credit_wallets cw
+      WHERE cw.user_id = p_user_id;
     RETURN;
   END IF;
 
-  -- STEP 6: Calculate new balance
-  
   v_balance_after := v_balance_before + p_amount;
+  IF v_balance_after < 0 THEN
+    RAISE EXCEPTION 'Insufficient balance: % + % would be negative', v_balance_before, p_amount;
+  END IF;
 
-  -- STEP 7: Update wallet
-  -- (If this fails, the entire transaction rolls back; ledger insert never happens)
-  
   UPDATE public.credit_wallets
   SET balance = v_balance_after,
       updated_at = now(),
       last_updated_at = now()
   WHERE id = v_wallet_id;
 
-  -- STEP 8: Insert ledger transaction
-  -- (If this fails, wallet update is rolled back automatically)
-  
   INSERT INTO public.credit_transactions (
-    id,
-    user_id,
-    wallet_id,
-    type,
-    reason,
-    amount,
-    balance_before,
-    balance_after,
-    idempotency_key,
-    status,
-    created_by
-  )
-  VALUES (
-    gen_random_uuid(),
-    p_user_id,
-    v_wallet_id,
-    'grant',
-    p_reason,
-    p_amount,
-    v_balance_before,
-    v_balance_after,
-    p_idempotency_key,
-    'completed',
-    'payment_webhook'
+    user_id, wallet_id, type, reason, amount,
+    balance_before, balance_after, idempotency_key,
+    correlation_id, status, metadata, created_by
+  ) VALUES (
+    p_user_id, v_wallet_id, p_type, p_reason, p_amount,
+    v_balance_before, v_balance_after, p_idempotency_key,
+    p_correlation_id, 'completed', COALESCE(p_metadata, '{}'::JSONB), p_created_by
   )
   RETURNING id INTO v_transaction_id;
 
-  -- STEP 9: Return success
-  
-  RETURN QUERY SELECT 'granted'::TEXT, v_transaction_id, v_balance_after, NULL::TEXT;
-
-EXCEPTION WHEN OTHERS THEN
-  -- Catch unexpected database errors (FK violations, constraint violations, etc.)
-  -- Return error; let transaction rollback naturally
-  RETURN QUERY SELECT 'database_error'::TEXT, NULL::UUID, NULL::BIGINT, 
-    ('Unexpected error: ' || SQLERRM)::TEXT;
-  RETURN;
+  RETURN QUERY SELECT v_transaction_id, v_balance_after, FALSE;
 END;
 $$;
 
--- ============================================================================
--- Security: Revoke from all public roles, grant only to service_role
--- ============================================================================
+REVOKE EXECUTE ON FUNCTION public.grant_credits(
+  UUID, BIGINT, TEXT, TEXT, TEXT, UUID, JSONB, TEXT
+) FROM PUBLIC, authenticated, anon;
 
-REVOKE EXECUTE ON FUNCTION public.grant_credits(UUID, BIGINT, TEXT, TEXT)
-FROM PUBLIC, authenticated, anon;
-
-GRANT EXECUTE ON FUNCTION public.grant_credits(UUID, BIGINT, TEXT, TEXT)
-TO service_role;
+GRANT EXECUTE ON FUNCTION public.grant_credits(
+  UUID, BIGINT, TEXT, TEXT, TEXT, UUID, JSONB, TEXT
+) TO service_role;
