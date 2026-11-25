@@ -60,14 +60,25 @@ export default async function DashboardPage() {
         return { ...asset, previewUrl: null };
       }
 
-      const { data, error } = await supabase.storage
-        .from(asset.storage_bucket)
-        .createSignedUrl(asset.storage_key, ASSET_PREVIEW_URL_TTL_SECONDS);
+      // The verified owner-scoped Storage policy covers the private assets bucket.
+      // Do not attempt to sign objects from buckets without an established policy.
+      if (asset.storage_bucket !== 'assets') {
+        return { ...asset, previewUrl: null };
+      }
 
-      return {
-        ...asset,
-        previewUrl: error ? null : data.signedUrl,
-      };
+      try {
+        const { data, error } = await supabase.storage
+          .from(asset.storage_bucket)
+          .createSignedUrl(asset.storage_key, ASSET_PREVIEW_URL_TTL_SECONDS);
+
+        return {
+          ...asset,
+          previewUrl: error ? null : (data?.signedUrl ?? null),
+        };
+      } catch {
+        // Network/transport failures must not abort the dashboard render.
+        return { ...asset, previewUrl: null };
+      }
     })
   );
   const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : 0;
