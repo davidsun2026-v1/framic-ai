@@ -91,3 +91,17 @@ This dated addendum supersedes earlier asset/dashboard verification statements w
 Read-only counts at audit time: `generated_assets=0`, `profiles=0`, `credit_wallets=0`. The schema-corrected EXPLAIN plan used an empty-table/sentinel query and returned `Limit → Sort → Seq Scan`, 0 actual rows, 3 shared hit blocks, 7.318 ms planning, and 0.155 ms execution. This is not a representative workload and does not justify adding an index.
 
 No production indexes were added or removed. No application code or production data was changed. The full repeatable methodology, SQL, and measurement status are recorded in `docs/04-TESTING/DASHBOARD_PERFORMANCE_BENCHMARK.md`.
+
+
+---
+
+# Dashboard Schema Correction — 2026-11-25
+
+The separate branch `fix/dashboard-schema-contract` updates `apps/web/app/dashboard/page.tsx` to use the live Supabase column contract verified in the 2026-11-25 dashboard audit:
+
+- Profile lookup selects `email, display_name` and uses `display_name` as the preferred greeting.
+- Asset lookup selects `id, type, storage_bucket, storage_key, created_at`; it no longer references `asset_type` or `storage_url`.
+- Image previews request short-lived signed URLs through the authenticated Supabase server client because the inspected Storage buckets are private. Preview signing failures leave a non-sensitive placeholder rather than failing the entire dashboard.
+- No image transformation is assumed or enabled by this change. Responsive-thumbnail delivery remains a separate measured optimization.
+
+**Verification boundary:** this is a repository change on an unmerged PR branch. CI, deployed runtime behavior, Storage object policies, and a real user asset preview remain pending verification. No production database or Storage configuration was changed.
