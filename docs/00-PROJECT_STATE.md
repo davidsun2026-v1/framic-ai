@@ -313,7 +313,7 @@ Phase Completion:
 - Profiles: Partial — dashboard reads real `profiles` table, no edit UI
 - Credits: Partial — live `credit_wallets`/`credit_transactions` and `get_user_balance`, `reserve_credits`, `settle_credits`, `release_credits`, and `grant_credits` RPCs were inspected read-only on 2026-11-25 (see SPEC-002). Generation billing remains NOT VERIFIED because no executable generation path has been shown invoking the reservation lifecycle; repository migration replay is also incomplete.
 - Billing: Not Started — schema exists (`payments`/`subscriptions`/`webhook_events`, verified live on the connected Supabase project); no Paystack-related RPCs found on direct introspection; zero app-side code — see `docs/02-MODULES/05-PAYSTACK.md`
-- AI Generation: Not Started — `generation_jobs` schema exists; no reservation RPC or `/generate` route exists
+- AI Generation: Not Started — `generation_jobs` schema and live reservation lifecycle RPCs exist, but no executable `/generate` route or generation path invoking reserve/settle/release has been verified
 - Asset Library: Partial — dashboard reads real `generated_assets` table, no write path
 - Monitoring: Not Started
 - Deployment: Unable To Verify
