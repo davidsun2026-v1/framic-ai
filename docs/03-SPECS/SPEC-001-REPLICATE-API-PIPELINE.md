@@ -47,7 +47,7 @@ Do not keep a synchronous HTTP request open during inference. Return an accepted
 
 ## 4. Verified live Supabase credit contract
 
-The connected Framic project inspected read-only on 2026-11-19 is project ref `gkvvecskbkwpcsuatklm`, region `eu-west-1`.
+The connected Framic project inspected read-only on 2026-11-25 is project ref `gkvvecskbkwpcsuatklm`, region `eu-west-1`.
 
 | Function | Exact live signature | Observed semantics |
 |---|---|---|
