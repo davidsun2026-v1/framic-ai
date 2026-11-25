@@ -574,3 +574,30 @@ This addendum records the read-only dashboard performance/schema audit and super
 - No production DDL, data mutation, storage object download, or application code change was made.
 
 Current work item for this audit: benchmark documentation and evidence capture only. Any dashboard code correction or index migration must be a separate reviewed PR supported by staging tests and representative measurements.
+
+
+---
+
+# Dashboard Schema Correction — 2026-11-25
+
+The separate branch `fix/dashboard-schema-contract` updates `apps/web/app/dashboard/page.tsx` to use the live Supabase column contract verified in the 2026-11-25 dashboard audit:
+
+- Profile lookup selects `email, display_name` and uses `display_name` as the preferred greeting.
+- Asset lookup selects `id, type, storage_bucket, storage_key, created_at`; it no longer references `asset_type` or `storage_url`.
+- Image previews request short-lived signed URLs through the authenticated Supabase server client because the inspected Storage buckets are private. Preview signing failures leave a non-sensitive placeholder rather than failing the entire dashboard.
+- No image transformation is assumed or enabled by this change. Responsive-thumbnail delivery remains a separate measured optimization.
+
+**Verification boundary:** this is a repository change on an unmerged PR branch. CI, deployed runtime behavior, Storage object policies, and a real user asset preview remain pending verification. No production database or Storage configuration was changed.
+
+
+---
+
+# Dashboard Storage Signing Review Follow-up — 2026-11-25
+
+PR `#54` follow-up on `fix/dashboard-schema-contract`:
+
+- Signed image preview failures are isolated per asset, including thrown transport errors; failed previews render a placeholder without aborting the dashboard.
+- Dashboard signing is restricted to the `assets` bucket, for which the connected Framic Supabase project has a verified authenticated owner-scoped SELECT policy on `storage.objects`.
+- The verified policy permits only keys shaped as `users/{authenticated-user-id}/...` in bucket `assets`.
+- Migration `supabase/migrations/20261125000000_add_assets_owner_select_policy.sql` records the same policy for repository-managed environments. It is not applied to production by this PR.
+- A clean migration replay, real staging object/signing test, and implementation of the Replicate asset persistence path remain outstanding. Do not treat the documented future generation pipeline as implemented.
