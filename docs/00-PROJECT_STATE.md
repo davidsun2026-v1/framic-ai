@@ -556,3 +556,21 @@ Any implementation, architecture, documentation, migration, deployment, or confi
 4. Avoid duplicate memory/state documents.
 5. Use a feature/fix/docs/chore branch and pull request; do not commit directly to `main`.
 6. Be reviewed against the actual resulting repository state before being considered complete.
+
+
+---
+
+# Dashboard Performance Audit Addendum (2026-11-25)
+
+This addendum records the read-only dashboard performance/schema audit and supersedes earlier asset/dashboard verification statements where they conflict.
+
+- The connected Supabase account exposes the Framic AI project `gkvvecskbkwpcsuatklm` in `eu-west-1`, status `ACTIVE_HEALTHY`.
+- Live schema uses `profiles.display_name`; `generated_assets` uses `type`, `storage_bucket`, `storage_key`, `file_size_bytes`, `public_url`, `cdn_url`, `dimensions`, and `created_at`.
+- Current `apps/web/app/dashboard/page.tsx` on `main` still selects `profiles.full_name` and `generated_assets.asset_type, storage_url`, and renders a plain `<img>` from `storage_url`. Those selected columns do not match the inspected live schema. Dashboard asset loading against this live schema is therefore **BROKEN** at the query-contract level; whether a separately deployed build differs is **Unable To Verify**.
+- All inspected Storage buckets (`assets`, `avatars`, `uploads`) are private. Storage image transformation is technically supported by Supabase for private assets via signed URLs, but project-level enablement/plan entitlement was not verified.
+- Live `profiles.email` and `credit_wallets.user_id` each have a unique constraint-generated index plus a redundant non-unique single-column index. No index changes were made.
+- `generated_assets`, `profiles`, and `credit_wallets` each returned zero rows at inspection. The empty-table query plan is not representative performance evidence.
+- Browser LCP/page-load/network/image-payload measurements and local build/test execution remain **NOT MEASURED / NOT RUN**. See `docs/04-TESTING/DASHBOARD_PERFORMANCE_BENCHMARK.md` for the reproducible benchmark protocol, exact staging SQL, and evidence table.
+- No production DDL, data mutation, storage object download, or application code change was made.
+
+Current work item for this audit: benchmark documentation and evidence capture only. Any dashboard code correction or index migration must be a separate reviewed PR supported by staging tests and representative measurements.
