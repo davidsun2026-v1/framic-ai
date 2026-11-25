@@ -76,16 +76,18 @@ The live generation-job and asset table columns must be checked before implement
 
 ## 6. Provider billing versus customer billing
 
-Replicate bills Framic according to model billing mechanics and actual usage. Framic credits are a separate customer-facing commercial policy.
+Replicate bills Framic according to the billing mechanics of each model or deployment and the usage actually incurred. Framic credits are a separate customer-facing commercial policy; a customer-credit release does not reverse or establish the absence of a provider charge.
 
-Replicate's current billing documentation states that public models are charged for active processing time, while setup and idle time are free. Failed runs are not charged under the documented general rule; canceled official-model runs may still be charged for time already run. Private models and deployments have different instance-time billing. Models that invoke downstream models can incur root and downstream costs.
+For public models, Replicate's documented general rule is that active processing time is billable while setup and idle time are free; a failed run is generally not charged under that rule. This general statement must not be interpreted as a guarantee that every failed *chained* run has zero provider cost. A model may invoke one or more downstream models, and those downstream calls can incur their own usage charges even when the parent prediction or overall workflow ultimately fails. Canceled official-model runs may also be charged for time already run. Private models and deployments can follow different instance-time billing mechanics.
 
-Framic's success-only customer policy:
-- Successful, validated, durably stored output: settle customer reservation once.
-- Failed/canceled/aborted prediction or unsuccessful delivery: release customer reservation.
-- Provider costs not recovered from a successful customer generation are recorded as Framic operating expense.
+For every root prediction and any downstream prediction that can be identified, Framic's provider-cost reconciliation should retain the model/version, prediction or attempt identity, terminal status, available usage metrics, and observed billed amount/currency. Reconcile the actual provider usage/invoice evidence rather than assuming that the root prediction's terminal status determines the total cost of the chain. Where provider usage details are unavailable, mark the cost as unresolved rather than recording zero. These provider expenses remain separate from customer credit transactions.
 
-Do not promise that every unsuccessful or canceled provider run costs Framic zero.
+Framic's success-only customer policy remains:
+- Successful, validated, durably stored output: settle the customer reservation once.
+- Failed/canceled/aborted prediction or unsuccessful delivery: release the customer reservation once, subject to safe terminal-state reconciliation.
+- Provider costs incurred by unsuccessful or unrecovered generations are recorded as Framic operating expense unless separately recovered under an approved commercial policy.
+
+**Accounting distinction:** releasing customer credits is not evidence that Replicate charged Framic zero. A failed parent prediction does not, by itself, establish that its downstream model calls were free.
 
 ## 7. Model registry and pricing gate
 
