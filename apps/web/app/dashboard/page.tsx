@@ -73,7 +73,7 @@ export default async function DashboardPage() {
 
         return {
           ...asset,
-          previewUrl: error ? null : (data?.signedUrl ?? null),
+          previewUrl: error ? null : data?.signedUrl ?? null,
         };
       } catch {
         // Network/transport failures must not abort the dashboard render.
