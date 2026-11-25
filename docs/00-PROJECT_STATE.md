@@ -439,7 +439,7 @@ Tasks:
 
 - [ ] Text-to-image
 - [ ] Image-to-image
-- [ ] Generation queue (`generation_jobs` schema exists; no reservation RPC exists — see EPIC-004 correction above — and no app code)
+- [ ] Generation queue (`generation_jobs` schema and live reservation lifecycle RPCs exist; application integration invoking reserve/settle/release is not implemented or verified)
 - [ ] Generation history
 - [ ] Credit consumption
 - [ ] Generation tests
