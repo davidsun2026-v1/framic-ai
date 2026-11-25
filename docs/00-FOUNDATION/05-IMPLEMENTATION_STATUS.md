@@ -105,3 +105,14 @@ The separate branch `fix/dashboard-schema-contract` updates `apps/web/app/dashbo
 - No image transformation is assumed or enabled by this change. Responsive-thumbnail delivery remains a separate measured optimization.
 
 **Verification boundary:** this is a repository change on an unmerged PR branch. CI, deployed runtime behavior, Storage object policies, and a real user asset preview remain pending verification. No production database or Storage configuration was changed.
+
+
+---
+
+## Dashboard Storage signing review follow-up — 2026-11-25
+
+- Image preview signing now catches both returned Storage errors and thrown transport/network errors per asset. One failed preview therefore degrades to a placeholder rather than rejecting the dashboard's asset-rendering promise.
+- Signing is limited to the `assets` bucket because the verified owner-scoped read policy applies to that bucket. Other bucket values render a placeholder; no broader Storage access is inferred.
+- Read-only live Supabase introspection verified the `assets_owner_select` policy on `storage.objects`: authenticated SELECT is limited to bucket `assets` and object keys whose first two folders are `users/{auth.uid()}`.
+- Added `supabase/migrations/20261125000000_add_assets_owner_select_policy.sql` to reproduce that policy on environments applying the repository migration chain. It is idempotent by policy name and grants SELECT only; it does not make the bucket public or grant object writes.
+- The migration has not been applied to production. Clean-database migration replay and an authenticated signed-URL test with a real staging object remain pending. The generation/upload path is not implemented, so compatibility of future persisted object keys remains unverified.
