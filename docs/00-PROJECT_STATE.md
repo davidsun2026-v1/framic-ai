@@ -311,9 +311,9 @@ Phase Completion:
 - Foundation: In Progress
 - Authentication: Partial — working end-to-end against real production (PRs #6, #7), never runtime-tested via `next dev`
 - Profiles: Partial — dashboard reads real `profiles` table, no edit UI
-- Credits: Partial — `credit_wallets`/`credit_transactions` schema verified live; only `get_user_balance` (balance read) is wired, and only via an unmerged PR (#18); no reserve/settle/release/refund RPC or `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs` objects exist anywhere — see Evidence Log below
+- Credits: Partial — live `credit_wallets`/`credit_transactions` and `get_user_balance`, `reserve_credits`, `settle_credits`, `release_credits`, and `grant_credits` RPCs were inspected read-only on 2026-11-25 (see SPEC-002). Generation billing remains NOT VERIFIED because no executable generation path has been shown invoking the reservation lifecycle; repository migration replay is also incomplete.
 - Billing: Not Started — schema exists (`payments`/`subscriptions`/`webhook_events`, verified live on the connected Supabase project); no Paystack-related RPCs found on direct introspection; zero app-side code — see `docs/02-MODULES/05-PAYSTACK.md`
-- AI Generation: Not Started — `generation_jobs` schema exists; no reservation RPC or `/generate` route exists
+- AI Generation: Not Started — `generation_jobs` schema and live reservation lifecycle RPCs exist, but no executable `/generate` route or generation path invoking reserve/settle/release has been verified
 - Asset Library: Partial — dashboard reads real `generated_assets` table, no write path
 - Monitoring: Not Started
 - Deployment: Unable To Verify
@@ -374,13 +374,16 @@ Status: Partial
 
 Tasks:
 
-- [x] Credits schema — verified live on the connected Supabase project (`gkvvecskbkwpcsuatklm`, `pg_class` introspection, 2026-09-20): `credit_wallets`, `credit_transactions` (immutable ledger — `UPDATE`/`DELETE` blocked by RLS policy). `token_ledgers`, `token_reservations`, `view_user_balances`, and `audit_logs` do **not** exist in this database and are not defined anywhere in `supabase/migrations/`. Prior claims that these were "real production" objects are corrected as of this entry.
-- [x] Balance read — `get_user_balance(p_user_id uuid)` exists live (`pg_proc` introspection, 2026-09-20), `STABLE SECURITY DEFINER`, reads `credit_wallets.balance` directly (not `view_user_balances`). Added by PR #18 (https://github.com/davidsun2026-v1/framic-ai/pull/18) — **open, not yet merged to `main`**; applied directly to the live database ahead of the migration file landing in the repository's default branch.
-- [ ] Reserve/settle/release/refund RPCs — **Not found.** No function by these or similar names exists live or in the repository. `pg_proc` on the connected project returns exactly four `public`-schema functions: `get_user_balance`, `handle_new_user`, `rls_auto_enable`, `update_profiles_updated_at`.
-- [ ] Credit awarding — no app code calls any credit-mutation RPC, because none exist yet.
-- [ ] Credit deductions — same; no RPC exists to call.
-- [ ] Audit history — **Not found.** No `audit_logs` table exists. `credit_transactions` is the only ledger-style table and nothing in application code currently writes to it.
-- [ ] Credits tests
+- [x] Credits schema — live `credit_wallets` and `credit_transactions` verified by read-only inspection of Framic project `gkvvecskbkwpcsuatklm` on 2026-11-25; see SPEC-002 for observed columns and constraints.
+- [x] Balance read primitive — live `get_user_balance(p_user_id uuid)` inspected.
+- [x] Reservation lifecycle primitives — live `reserve_credits`, `settle_credits`, and `release_credits` definitions/signatures and observed behavior inspected read-only on 2026-11-25; see SPEC-001 and SPEC-002.
+- [x] Credit grant primitive — live eight-argument `grant_credits` inspected; it is separate from generation settlement.
+- [ ] Repository migration replay — incomplete; recover and reconcile the exact source migration history before treating a clean local/staging replay as verified.
+- [ ] Application integration — no executable generation submission path invoking reserve/settle/release was verified.
+- [ ] Concurrency, idempotency, and lifecycle acceptance tests — not verified in isolated staging.
+- [ ] Credit history/audit guarantees — current transaction lifecycle status is mutable; do not describe the live ledger as strictly append-only or double-entry.
+
+**Evidence boundary:** live RPC existence is a verified database fact, not proof of application wiring, staging acceptance, or production generation readiness. The September 20 evidence log below records the earlier inspection and is retained as historical evidence; its RPC-absence conclusion was superseded by the November 25 inspection documented in SPEC-002.
 
 ---
 
@@ -436,7 +439,7 @@ Tasks:
 
 - [ ] Text-to-image
 - [ ] Image-to-image
-- [ ] Generation queue (`generation_jobs` schema exists; no reservation RPC exists — see EPIC-004 correction above — and no app code)
+- [ ] Generation queue (`generation_jobs` schema and live reservation lifecycle RPCs exist; application integration invoking reserve/settle/release is not implemented or verified)
 - [ ] Generation history
 - [ ] Credit consumption
 - [ ] Generation tests
@@ -478,19 +481,20 @@ Epic:
 EPIC-004 Credits (documentation reconciliation)
 
 Status:
-Active
+Active — PR #52 Codex review remediation
 
 Last Completed Task:
-Reconciled EPIC-004 Credits claims in this document, `apps/web/lib/auth/actions.ts`, and `apps/web/lib/supabase/service.ts` against direct `pg_class`/`pg_proc` introspection of the connected Supabase project. Removed unsupported `token_ledgers`/`token_reservations`/`view_user_balances`/`audit_logs`/reserve-settle-release-refund-RPC claims; documented exactly what's verified (`credit_wallets`, `credit_transactions`, `get_user_balance`). See Evidence Log below for full query record.
+Updated SPEC-002 with the live credit ledger/RPC contract based on read-only Supabase inspection on 2026-11-25. The live reservation lifecycle RPCs are present, but application integration and generation billing remain NOT VERIFIED.
 
 Current Task:
-None active — awaiting review of this reconciliation and a decision on merging PR #18 (still open) before further credits work proceeds.
+Reconcile project-state claims and Replicate provider-cost wording with the verified November 25 evidence and the success-only customer credit policy.
 
 Next Task:
-Complete the Manual Verification Pending checklist in `05-IMPLEMENTATION_STATUS.md`, and update that document's Supabase contract findings to reflect this same reconciliation (it currently repeats the now-corrected `token_ledgers`/`token_reservations` claim).
+Complete PR #52 review, verify both Codex findings against the updated branch, and inspect CI/review status. Keep the PR open pending user approval; do not merge automatically.
 
 Blockers:
-None.
+- The repository migration chain does not yet provide a verified one-to-one replay path for all live migrations.
+- No executable Replicate generation path or end-to-end staging billing acceptance has been verified.
 
 ---
 

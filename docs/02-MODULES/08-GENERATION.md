@@ -1,19 +1,42 @@
 # AI Generation
 
 ## Purpose
-Orchestrate authenticated, credit-authorized AI generation from request to persisted result.
+Orchestrate authenticated, credit-authorized generation from request validation through provider execution to durable asset delivery.
 
-## Scope
-Request validation, cost resolution, credit reservation/deduction, generation record creation, provider dispatch, asynchronous status, failure/refund handling, asset linkage, and history.
+## V1 scope
+- Text-to-image.
+- Text-to-video.
+- Replicate as the sole inference provider.
 
-## Required lifecycle
-`requested → authorized → running → succeeded|failed|cancelled` with timestamps and correlation IDs.
+Image-to-image, image-to-video, audio, and other modalities require separate product and model approval.
 
-## Rules
-Credits are secured before provider execution. Every attempt is tracked. Provider failure cannot produce a false success. Retries must be idempotent or explicitly reconciled.
+## Required logical lifecycle
+`requested → reserved → submitted → processing → delivering → succeeded`
+
+Terminal unsuccessful outcomes include `failed`, `canceled`, and `aborted`. Persist timestamps, correlation identifiers, provider prediction IDs, and the linked credit reservation.
+
+These are logical states, not an assertion that the current database accepts these exact status strings. Reconcile with live constraints before implementation.
+
+## Financial rules
+- Resolve credit price server-side from an approved model/pricing registry.
+- Reserve credits before submitting a provider prediction.
+- Settle only after output validation, durable Framic storage, and asset/job association.
+- Release on terminal unsuccessful outcomes or unrecoverable delivery failure.
+- Use live `reserve_credits`, `settle_credits`, and `release_credits` signatures in the pipeline specification.
+- Keep provider usage costs separate from customer credit transactions.
+- Enforce idempotency for client requests, provider attempts, webhook events, settlement, and release.
+
+## Reliability rules
+- Never blindly retry an ambiguous provider submission.
+- Reconcile missed webhooks using authoritative provider prediction status.
+- Never mark a job succeeded merely because the provider returned success.
+- Never settle credits before durable asset delivery.
+- Duplicate/out-of-order events must not cause a second financial mutation or state regression.
 
 ## Acceptance
-Users can submit supported generation requests and observe truthful status/results without credit bypass or untracked execution.
+Users can submit approved generation requests and observe truthful status/results without credit bypass, duplicate billing, lost outputs, or untracked provider execution.
 
-## Non-goals
-Provider-specific API details; see Replicate.
+See `docs/03-SPECS/SPEC-001-REPLICATE-API-PIPELINE.md` and `docs/03-SPECS/SPEC-002-GENERATION-CREDIT-ACCOUNTING.md`.
+
+## Current status
+**NOT VERIFIED:** executable generation orchestration, Replicate integration, durable output delivery, and end-to-end settlement are not established by the current audit.
