@@ -67,3 +67,27 @@ The following remain release gates:
 ## Rule
 
 Documentation is never implementation evidence. A capability becomes VERIFIED only when the required repository artifacts and/or live system behavior have been directly evidenced. When repository and production contracts disagree, the actual target production system must be inspected before modifying the migration chain.
+
+
+---
+
+## Dashboard performance audit addendum — 2026-11-25
+
+This dated addendum supersedes earlier asset/dashboard verification statements where they conflict.
+
+| Area | Status | Evidence |
+|---|---|---|
+| Framic Supabase project identification | VERIFIED | Connected project list returned `gkvvecskbkwpcsuatklm`, name `framic-ai`, region `eu-west-1`, `ACTIVE_HEALTHY` |
+| Live asset schema | VERIFIED | Read-only catalog introspection: `type`, `storage_bucket`, `storage_key`, `file_size_bytes`, `public_url`, `cdn_url`, `dimensions`, `created_at` |
+| Dashboard schema compatibility | BROKEN | `apps/web/app/dashboard/page.tsx` selects `profiles.full_name`, `generated_assets.asset_type`, and `storage_url`; none are the live column names. |
+| Dashboard full-resolution image behavior | PARTIAL / NOT MEASURED | Source uses plain `<img src={asset.storage_url}>` without transform/width/srcset, but live query contract fails and no browser trace was available. |
+| Private Storage buckets | VERIFIED | `assets`, `avatars`, and `uploads` all report `public=false` |
+| Supabase image transformation enabled | UNABLE TO VERIFY | Feature/plan setting not exposed by inspected database catalog; requires Storage Dashboard setting check |
+| Duplicate indexes | VERIFIED | `profiles_email_key` plus `idx_profiles_email`; `credit_wallets_user_id_key` plus `idx_credit_wallets_user_id` |
+| Candidate `(user_id, created_at DESC)` index benefit | NOT VERIFIED | Live tables are empty; no representative before/after staging benchmark |
+| LCP, page load, network/image payload | NOT MEASURED | Authenticated browser HAR/Performance trace not available |
+| Build/lint/type-check/tests | NOT RUN | GitHub source connector has no local shell/runtime; no workflow runs were returned for inspected recent commit |
+
+Read-only counts at audit time: `generated_assets=0`, `profiles=0`, `credit_wallets=0`. The schema-corrected EXPLAIN plan used an empty-table/sentinel query and returned `Limit → Sort → Seq Scan`, 0 actual rows, 3 shared hit blocks, 7.318 ms planning, and 0.155 ms execution. This is not a representative workload and does not justify adding an index.
+
+No production indexes were added or removed. No application code or production data was changed. The full repeatable methodology, SQL, and measurement status are recorded in `docs/04-TESTING/DASHBOARD_PERFORMANCE_BENCHMARK.md`.
