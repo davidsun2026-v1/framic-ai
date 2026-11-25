@@ -68,7 +68,7 @@ export default async function DashboardPage() {
         ...asset,
         previewUrl: error ? null : data.signedUrl,
       };
-    }),
+    })
   );
   const balance = balanceResult.status === 'fulfilled' ? balanceResult.value : 0;
 
